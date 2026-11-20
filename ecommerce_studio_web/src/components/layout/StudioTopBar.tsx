@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
   ChevronDown,
@@ -9,8 +9,11 @@ import {
   Download,
   CheckCircle2,
   HelpCircle,
+  Settings,
 } from 'lucide-react';
 import { useStudioStore } from '@/stores/useStudioStore';
+import { useConfigStore } from '@/stores/useConfigStore';
+import { ModelSettingsDialog } from '@/components/layout/ModelSettingsDialog';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -38,9 +41,43 @@ export const StudioTopBar: React.FC = () => {
     renameCurrentSession,
   } = useStudioStore();
 
+  const {
+    config,
+    fetchConfig,
+    openSettings,
+  } = useConfigStore();
+
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [renameInput, setRenameInput] = useState('');
   const [isTourOpen, setIsTourOpen] = useState(false);
+
+  useEffect(() => {
+    fetchConfig();
+  }, [fetchConfig]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+        e.preventDefault();
+        openSettings();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [openSettings]);
+
+  const activeProvider = config?.active_provider || 'gemini';
+  const providerTitleMap: Record<string, string> = {
+    gemini: 'Gemini',
+    openai: 'OpenAI',
+    custom_openai: 'Custom Proxy',
+    ollama: 'Ollama',
+  };
+  const providerTitle = providerTitleMap[activeProvider] || 'AI Model';
+  const activeModel =
+    config?.[activeProvider]?.model ||
+    (activeProvider === 'gemini' ? 'gemini-2.0-flash' : 'gpt-4o');
+  const isConfigured = config?.[activeProvider]?.is_configured !== false;
 
   const handleOpenRename = () => {
     setRenameInput(currentSession?.name || '');
@@ -157,11 +194,35 @@ export const StudioTopBar: React.FC = () => {
         </div>
 
         {/* Right: API Connectivity & Guide */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Gemini Imagen Active</span>
-          </div>
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <button
+            type="button"
+            onClick={openSettings}
+            title="点击配置 AI 模型与密钥 (快捷键: ⌘, / Ctrl+,)"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900/60 hover:bg-zinc-800/80 transition-all border border-white/10 text-[11px] text-zinc-300 hover:text-white cursor-pointer group shadow-sm"
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                isConfigured
+                  ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)] animate-pulse'
+                  : 'bg-amber-400'
+              }`}
+            />
+            <span className="max-w-[150px] truncate font-medium">
+              {providerTitle} · {activeModel}
+            </span>
+            <ChevronDown className="h-3 w-3 text-zinc-500 group-hover:text-zinc-300 transition-colors shrink-0" />
+          </button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={openSettings}
+            className="h-8 w-8 p-0 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 rounded-lg"
+            title="模型与提供商设置 (⌘,)"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
 
           <Button
             variant="ghost"
@@ -242,6 +303,9 @@ export const StudioTopBar: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* AI Model Settings Dialog */}
+      <ModelSettingsDialog />
     </>
   );
 };
