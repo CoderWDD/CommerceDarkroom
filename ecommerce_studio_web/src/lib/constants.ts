@@ -1,0 +1,115 @@
+import { Perspective } from '@/types/session';
+
+export const STANDARD_PERSPECTIVES_META: Array<Omit<Perspective, 'prompt_zh' | 'active_version_id' | 'versions'>> = [
+  {
+    id: '01_white_bg',
+    name: '商业纯净白底首图',
+    tag: 'CTR点击率收割机',
+    desc: '纯白无影棚拍摄，高光比洁净质感，正面略微俯视，让轮廓与质地第一眼吸睛',
+    category: '主图转化',
+    psychology_target: '搜索列表曝光第一眼抓取，建立品质信任度，拉升点击转化率',
+  },
+  {
+    id: '02_scene',
+    name: '真实生活使用场景图',
+    tag: '生活方式与身份认同',
+    desc: '清晨工作台自然窗光漫射，咖啡/日程本生活道具衬托，自然展现日常使用瞬间',
+    category: '场景生活',
+    psychology_target: '唤醒消费者对美好居家/办公品质生活的向往，建立情感共鸣',
+  },
+  {
+    id: '03_macro',
+    name: '材质工艺与微距细节图',
+    tag: '超浅景深精工细节',
+    desc: '85mm微距大光圈特写，细腻哑光漫反射与金属拉丝交界，极致工业质感',
+    category: '材质工艺',
+    psychology_target: '消除廉价塑料感，通过精工级细节特写支撑品牌高端溢价',
+  },
+  {
+    id: '04_exploded',
+    name: '结构拆解与核心技术图',
+    tag: '核心黑科技可视化',
+    desc: '悬浮微距爆炸透视，多层密封结构、温控数显芯片与医用级内胆层层呈现',
+    category: '原理透视',
+    psychology_target: '硬核可视化黑科技，直观展现精密工艺，满足理性参数党',
+  },
+  {
+    id: '05_pain_point',
+    name: '痛点场景攻坚图',
+    tag: '打消渗水/烫嘴退货疑虑',
+    desc: '背包收纳或倒置严密防护情境，精准展现严密气密防漏与安全阻热承诺',
+    category: '痛点消灭',
+    psychology_target: '正面攻克历史差评与决策抗拒点，给买家绝对下单安全感',
+  },
+  {
+    id: '06_scale',
+    name: '便携携带与比例参照图',
+    tag: '真实体感无尺码偏差',
+    desc: '都市青年自然手持随行或放入标准车载杯架，真实人手比例，直观呈现量感',
+    category: '尺码参照',
+    psychology_target: '真实呈现便携握持手感与空间占用，避免到手尺寸心理落差',
+  },
+  {
+    id: '07_atmosphere',
+    name: '品牌情绪与质感氛围图',
+    tag: '高端品牌溢价塑造',
+    desc: '极简深色暗调布景，狭长轮廓冷金边光勾勒，杂志封面级视觉张力',
+    category: '品牌格调',
+    psychology_target: '营造高端精致的格调美学，加深品牌轻奢印记，促进高客单转化',
+  },
+  {
+    id: '08_variants',
+    name: '全系配色与规格陈列图',
+    tag: '丰富选择促进连单',
+    desc: '曜石黑、深空钛、皓月白经典色系矩阵平齐陈列，统一光影质感',
+    category: '多色矩阵',
+    psychology_target: '提供丰富选款体验，满足个性化审美偏好，促进情侣/送礼连带购买',
+  },
+  {
+    id: '09_social',
+    name: '真实买家秀种草图',
+    tag: '社交真实感与口碑背书',
+    desc: '自然采光下的桌面一角，无刻意摆拍的真实生活抓拍，小红书生活美学感',
+    category: '买家社交',
+    psychology_target: '消除过度商业精修的距离感，提供真实买家体验背书，助推种草决策',
+  },
+];
+
+export const DEMO_PRESETS = [
+  {
+    id: 'smart_cup',
+    title: '智能数显真空气密保温杯',
+    subtitle: '316L医用钢 / 触控数显 / 都市通勤',
+    data: {
+      name: '智能数显真空气密随行保温杯',
+      category: '316L医用不锈钢 / 哑光亲肤磨砂黑 / 触控数显杯盖',
+      target_audience: '25-38岁都市白领、商务通勤人士、注重生活质感的咖啡/茶饮爱好者',
+      pain_points: '市面竞品保温时长短、放在背包里容易渗水、杯口易烫嘴、瓶身容易刮花掉漆',
+      material_features: '316L医用级不锈钢内胆，外壁曜石黑亲肤喷砂烤漆，高精度LED数显触控屏',
+    },
+  },
+  {
+    id: 'face_serum',
+    title: '时光极光修护焕亮精华露',
+    subtitle: '高活性玻色因 / 极简冰晶瓶 / 敏感肌修复',
+    data: {
+      name: '时光极光臻萃修护焕亮精华露',
+      category: '轻奢院线级护肤 / 渐变极光冰晶玻璃瓶 / 真空按压泵',
+      target_audience: '22-35岁高知女性、经常熬夜需要屏障修护的年轻白领、成分党',
+      pain_points: '传统精华易氧化失活、瓶口接触污染、质地厚重闷痘、见效慢容易假滑',
+      material_features: '双层透光冰晶高硼硅玻璃，微晶流光质地，食品级电化铝冷冽泵头',
+    },
+  },
+  {
+    id: 'anc_headphones',
+    title: '钛音境空间音频降噪耳机',
+    subtitle: '48dB主动降噪 / 记忆海绵 / 高解析金标',
+    data: {
+      name: '钛音境空间音频头戴式无线降噪耳机',
+      category: 'Hi-Fi无损无线音频 / 航空铝金属耳壳 / 蛋白皮透气耳罩',
+      target_audience: '音乐发烧友、差旅飞行常客、开放工位需深度专注的极客创作者',
+      pain_points: '夹头压耳耳屏疼、降噪耳压感太重、蓝牙延迟大断连、塑料感明显易折断',
+      material_features: '航空级钛铝合金转轴，亲肤纳米蛋白皮耳罩，哑光雾面金属外壳',
+    },
+  },
+];
