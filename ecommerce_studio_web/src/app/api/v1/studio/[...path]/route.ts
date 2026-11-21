@@ -23,6 +23,7 @@ async function forwardRequest(req: NextRequest, { params }: { params: { path: st
     }
   });
 
+  const t0 = Date.now();
   try {
     let body: BodyInit | null = null;
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
@@ -39,6 +40,8 @@ async function forwardRequest(req: NextRequest, { params }: { params: { path: st
     initOptions.duplex = 'half';
 
     const backendRes = await fetch(targetUrl.toString(), initOptions);
+    const duration = Date.now() - t0;
+    console.log(`[Next.js Gateway] ${req.method} /api/v1/studio/${subPath} -> ${backendRes.status} (${duration}ms)`);
 
     const contentType = backendRes.headers.get('content-type') || '';
     const isStream =

@@ -27,7 +27,7 @@ export interface Perspective {
   versions: PerspectiveVersion[];
   
   // 运行时客户端状态 (Transient UI States)
-  render_status?: 'idle' | 'rendering' | 'success' | 'error';
+  render_status?: 'idle' | 'rendering' | 'pending' | 'success' | 'error';
   render_progress?: number;
   error_message?: string;
 }

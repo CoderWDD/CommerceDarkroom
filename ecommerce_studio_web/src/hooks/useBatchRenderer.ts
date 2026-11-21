@@ -12,7 +12,6 @@ export function useBatchRenderer() {
   const {
     currentSession,
     aspectRatio,
-    concurrency,
     isBatchRendering,
     batchProgress,
     setBatchRenderingState,
@@ -24,6 +23,7 @@ export function useBatchRenderer() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
   const globalTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const cardStartTimesRef = useRef<Record<string, number>>({});
 
   const clearAllTimers = useCallback(() => {
     if (inactivityTimerRef.current) {
@@ -78,16 +78,24 @@ export function useBatchRenderer() {
     abortControllerRef.current = controller;
 
     const totalCards = currentSession.perspectives?.length || 9;
+    cardStartTimesRef.current = {};
+    const batchStartTime = Date.now();
+    console.log(`🚀 [Batch Render Start] Session: ${currentSession.session_id}, total: ${totalCards}, serial concurrency: 1`);
+
     setBatchRenderingState(true, {
       total: totalCards,
       completed: 0,
-      etaSeconds: Math.ceil(totalCards * 15 / (concurrency || 3)),
+      etaSeconds: Math.ceil(totalCards * 15),
       currentRunningIds: currentSession.perspectives.map((p) => p.id),
     });
 
-    // 将所有卡片标记为开始渲染
-    currentSession.perspectives.forEach((p) => {
-      setSingleCardStatus(p.id, 'rendering', 10);
+    // 串行保活策略：首机位进入布光渲染，其余机位进入明确排队等待状态
+    currentSession.perspectives.forEach((p, idx) => {
+      if (idx === 0) {
+        setSingleCardStatus(p.id, 'rendering', 10);
+      } else {
+        setSingleCardStatus(p.id, 'pending', 0);
+      }
     });
 
     // 启动滑动动态心跳超时检测
@@ -112,7 +120,7 @@ export function useBatchRenderer() {
         {
           session_id: currentSession.session_id,
           aspect_ratio: aspectRatio,
-          concurrency: concurrency,
+          concurrency: 1, // 强制并发为 1
         },
         {
           onMessage: (event, data) => {
@@ -125,6 +133,8 @@ export function useBatchRenderer() {
             if (rawEvent === 'perspective_start') {
               const pid = data.perspective_id;
               if (pid) {
+                cardStartTimesRef.current[pid] = Date.now();
+                console.log(`🎬 [Batch Render] Perspective started: ${pid} (${data.name || ''})`);
                 setSingleCardStatus(pid, 'rendering', 40);
               }
             }
@@ -132,6 +142,9 @@ export function useBatchRenderer() {
             else if (rawEvent === 'perspective_done' || rawEvent === 'perspective_success') {
               const pid = data.perspective_id;
               if (pid) {
+                const start = cardStartTimesRef.current[pid];
+                const elapsed = start ? ((Date.now() - start) / 1000).toFixed(1) : '?';
+                console.log(`✅ [Batch Render] Perspective finished in ${elapsed}s: ${pid} (${data.name || ''}) [${data.completed}/${data.total}]`);
                 if (data.version) {
                   addNewVersionSnapshot(pid, data.version);
                 }
@@ -143,6 +156,9 @@ export function useBatchRenderer() {
               const pid = data.perspective_id;
               const errorMsg = data.error || data.message || '当前中继代理生图失败或接口不可用';
               if (pid) {
+                const start = cardStartTimesRef.current[pid];
+                const elapsed = start ? ((Date.now() - start) / 1000).toFixed(1) : '?';
+                console.error(`❌ [Batch Render] Perspective error after ${elapsed}s: ${pid}: ${errorMsg}`);
                 setSingleCardStatus(pid, 'error', 0, errorMsg);
               }
             }
@@ -156,17 +172,19 @@ export function useBatchRenderer() {
             }
             // 5. 批次全量完结
             else if (rawEvent === 'batch_complete' || rawEvent === 'complete') {
+              const totalElapsed = ((Date.now() - batchStartTime) / 1000).toFixed(1);
+              console.log(`🏁 [Batch Render Complete] Total elapsed: ${totalElapsed}s, completed: ${data.completed}/${data.total}`);
               clearAllTimers();
               setBatchRenderingState(false);
               // 同步权威 session 数据至前端状态库，确保 9 大图全量即时刷出
               if (data.session) {
                 useStudioStore.getState().setSession(data.session);
               }
-              // 兜底安全：将任何遗留的 rendering 卡片置为完成或关闭
+              // 兜底安全：将任何遗留的 rendering/pending 卡片置为完成或关闭
               const storeSession = useStudioStore.getState().currentSession;
               if (storeSession) {
                 storeSession.perspectives.forEach((p) => {
-                  if (p.render_status === 'rendering') {
+                  if (p.render_status === 'rendering' || p.render_status === 'pending') {
                     setSingleCardStatus(p.id, p.image_url ? 'success' : 'error', 0, '渲染流已完结');
                   }
                 });
@@ -200,7 +218,6 @@ export function useBatchRenderer() {
     currentSession,
     isBatchRendering,
     aspectRatio,
-    concurrency,
     setBatchRenderingState,
     setSingleCardStatus,
     addNewVersionSnapshot,

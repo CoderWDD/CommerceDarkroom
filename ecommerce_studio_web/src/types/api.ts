@@ -60,8 +60,9 @@ export interface CopilotChatRequest {
 }
 
 export interface SSEBatchEvent {
-  event: 'progress' | 'perspective_done' | 'perspective_error' | 'batch_complete';
+  event: 'progress' | 'perspective_start' | 'perspective_done' | 'perspective_success' | 'perspective_error' | 'batch_complete';
   perspective_id?: string;
+  name?: string;
   progress?: number;
   total?: number;
   completed?: number;

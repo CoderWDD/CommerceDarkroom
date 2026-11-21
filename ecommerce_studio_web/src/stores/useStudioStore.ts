@@ -58,7 +58,7 @@ interface StudioState {
   // Card Status & Batch Actions
   setSingleCardStatus: (
     perspectiveId: string,
-    status: 'idle' | 'rendering' | 'success' | 'error',
+    status: 'idle' | 'rendering' | 'pending' | 'success' | 'error',
     progress?: number,
     errorMsg?: string
   ) => void;
@@ -96,7 +96,7 @@ export const useStudioStore = create<StudioState>()(
       activePerspectiveId: '01_white_bg',
       selectedPreviewVersions: {},
       aspectRatio: '1:1',
-      concurrency: 3,
+      concurrency: 1,
 
       isBatchRendering: false,
       batchProgress: {
@@ -116,7 +116,7 @@ export const useStudioStore = create<StudioState>()(
 
       setAspectRatio: (ratio) => set({ aspectRatio: ratio }),
 
-      setConcurrency: (num) => set({ concurrency: Math.max(1, Math.min(5, num)) }),
+      setConcurrency: () => set({ concurrency: 1 }),
 
       setSession: (session) => {
         // Ensure perspectives are aligned with standard meta
@@ -310,7 +310,7 @@ export const useStudioStore = create<StudioState>()(
         const { currentSession } = get();
         if (!currentSession) return;
         const updated = currentSession.perspectives.map((p) => {
-          if (p.render_status === 'rendering') {
+          if (p.render_status === 'rendering' || p.render_status === 'pending') {
             return {
               ...p,
               render_status: 'error' as const,

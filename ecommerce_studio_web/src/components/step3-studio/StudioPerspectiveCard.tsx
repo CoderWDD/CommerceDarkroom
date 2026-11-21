@@ -11,6 +11,7 @@ import {
   AlertCircle,
   AlertTriangle,
   RefreshCw,
+  Clock,
 } from 'lucide-react';
 import { Perspective } from '@/types/session';
 import { useStudioStore } from '@/stores/useStudioStore';
@@ -66,6 +67,7 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
 
   const displayImageUrl = selectedVersion?.image_url || perspective.image_url;
   const isRendering = perspective.render_status === 'rendering';
+  const isPending = perspective.render_status === 'pending';
   const isError = perspective.render_status === 'error';
 
   const aspectRatioClass = {
@@ -76,6 +78,8 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
 
   const handleRenderNewVersion = async () => {
     if (!currentSession?.session_id) return;
+    const t0 = Date.now();
+    console.log(`🎬 [Single Slot Render Start] Perspective ${perspective.id} (${perspective.name})...`);
     setIsRefiningSlot(true);
     setSingleCardStatus(perspective.id, 'rendering', 30);
 
@@ -101,8 +105,11 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
       setSingleCardStatus(perspective.id, 'success', 100);
       setRefineInstruction('');
       setIsRefineOpen(false);
+      const duration = ((Date.now() - t0) / 1000).toFixed(1);
+      console.log(`✅ [Single Slot Render Success] Perspective ${perspective.id} finished in ${duration}s`);
     } catch (e: unknown) {
-      console.error('Slot rendering error:', e);
+      const duration = ((Date.now() - t0) / 1000).toFixed(1);
+      console.error(`❌ [Single Slot Render Error] Perspective ${perspective.id} failed after ${duration}s:`, e);
       const errMsg = e instanceof Error ? e.message : '渲染失败';
       setSingleCardStatus(perspective.id, 'error', 0, errMsg);
     } finally {
@@ -132,6 +139,11 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
               <Badge variant="warning" className="text-[10px] py-0 px-1.5 gap-1 animate-pulse">
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
                 置景布光中
+              </Badge>
+            ) : isPending ? (
+              <Badge variant="outline" className="text-[10px] py-0 px-1.5 gap-1 border-amber-500/30 text-amber-300 bg-amber-500/5">
+                <Clock className="h-2.5 w-2.5 text-amber-400" />
+                排队等待机位
               </Badge>
             ) : isError ? (
               <Badge
@@ -165,6 +177,17 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
               <Camera className="h-7 w-7 text-sky-400/80 animate-pulse" />
               <span className="text-[11px] font-mono text-zinc-300">
                 正在渲染商业大片...
+              </span>
+            </div>
+          ) : isPending ? (
+            /* Queue Waiting Skeleton */
+            <div className="absolute inset-0 bg-zinc-950/80 border border-amber-500/10 flex flex-col items-center justify-center gap-2 text-zinc-400">
+              <Clock className="h-6 w-6 text-amber-400/60 animate-pulse" />
+              <span className="text-[11px] font-mono text-amber-300/80">
+                机位排队等待中...
+              </span>
+              <span className="text-[10px] text-zinc-500">
+                串行保活模式 · 逐张稳定生成
               </span>
             </div>
           ) : isError ? (

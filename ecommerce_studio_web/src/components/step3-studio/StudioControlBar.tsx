@@ -6,21 +6,18 @@ import {
   Square,
   RectangleVertical,
   RectangleHorizontal,
-  Sliders,
+  ShieldCheck,
   XCircle,
   Clock,
 } from 'lucide-react';
 import { useStudioStore } from '@/stores/useStudioStore';
 import { useBatchRenderer } from '@/hooks/useBatchRenderer';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 
 export const StudioControlBar: React.FC = () => {
   const {
     aspectRatio,
     setAspectRatio,
-    concurrency,
-    setConcurrency,
   } = useStudioStore();
 
   const {
@@ -77,23 +74,14 @@ export const StudioControlBar: React.FC = () => {
           </div>
         </div>
 
-        {/* Concurrency Slider */}
-        <div className="flex items-center gap-2.5 min-w-[140px]">
-          <div className="flex items-center gap-1 text-xs text-zinc-400">
-            <Sliders className="h-3.5 w-3.5 text-zinc-500" />
-            <span>并发:</span>
-            <span className="font-mono text-zinc-200 font-bold">{concurrency}</span>
-            <span className="text-[10px] text-zinc-500">线程</span>
-          </div>
-          <div className="w-20">
-            <Slider
-              value={[concurrency]}
-              min={1}
-              max={5}
-              step={1}
-              onValueChange={(val) => setConcurrency(val[0])}
-            />
-          </div>
+        {/* Concurrency Mode (Locked to 1 for 100% Stability & Zero 429 Errors) */}
+        <div
+          className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs"
+          title="限制并发只能为 1，逐张串行布光拍摄，杜绝代理服务商限流与连接中断，保障出图高可用"
+        >
+          <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+          <span className="text-emerald-300 font-medium">串行保活模式 (并发: 1)</span>
+          <span className="text-[10px] text-emerald-400/80 font-mono">· 稳定优先</span>
         </div>
       </div>
 
@@ -104,7 +92,7 @@ export const StudioControlBar: React.FC = () => {
             <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg">
               <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
               <span>
-                正在并发拍摄 ({batchProgress.completed}/{batchProgress.total})...
+                正在逐张拍摄 ({batchProgress.completed}/{batchProgress.total})...
               </span>
               <span className="text-zinc-400 font-mono text-[11px] flex items-center gap-1">
                 <Clock className="h-3 w-3" /> 约 {batchProgress.etaSeconds}s
