@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 900; // 15 minutes timeout to support full 9-image batch rendering
+export const maxDuration = 60; // Max duration for Vercel Hobby plan (client direct-connects to backend for long SSE)
 
 const BACKEND_BASE_URL = process.env.FASTAPI_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
