@@ -432,7 +432,7 @@ start_services() {
     log_info "正在启动后端服务 (FastAPI / 端口 8000)..."
     (
         cd "${PROJECT_ROOT}"
-        exec nohup "$PYTHON_CMD" ecommerce_studio/server.py --host 0.0.0.0 --port 8000
+        exec nohup "$PYTHON_CMD" ecommerce_studio/server.py --host 0.0.0.0 --port 8000 </dev/null
     ) >> "${BACKEND_LOG}" 2>&1 &
     BACKEND_PID=$!
     echo "$BACKEND_PID" > "${BACKEND_PID_FILE}"
@@ -442,7 +442,7 @@ start_services() {
     log_info "正在启动前端服务 (Next.js / 端口 3000)..."
     (
         cd "${PROJECT_ROOT}/ecommerce_studio_web"
-        exec nohup npm run dev
+        exec nohup npm run dev </dev/null
     ) >> "${FRONTEND_LOG}" 2>&1 &
     FRONTEND_PID=$!
     echo "$FRONTEND_PID" > "${FRONTEND_PID_FILE}"

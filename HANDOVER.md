@@ -424,8 +424,12 @@ flowchart LR
   4. 若使用 OpenAI 第三方中继代理，请确认代理平台是否已开通 `dall-e-3` 或对应生图模型权限，且余额充足。
 
 ### Q2: 遇到 `500 Internal Server Error (socket hang up / ECONNRESET)`？
-- **原因**: 客户端发起了耗时较长的生图请求（10-20s），在此期间后端进程被重启或端口重绑定，导致底层 TCP 连接中断。
-- **解决**: 执行 `./stop.sh && ./start.sh` 重启服务，或直接在浏览器中刷新页面重新触发微调出图即可。
+- **根本原因排查与架构修复**:
+  1. **Next.js 开发代理超时限制 (30s)**: Next.js dev 模式默认 `rewrites` 使用 `http-proxy`，硬编码了 `proxyTimeout: 30000` (30秒)。商业多模型生图（Imagen 3 / DALL-E 3）叠加 AI 提示词二次润色总耗时常在 15~35 秒之间，极易触发代理断开抛出 `socket hang up / ECONNRESET`。
+     - **修复**: 在 `ecommerce_studio_web/src/app/api/v1/studio/[...path]/route.ts` 实现了全功能 App Router Route Handler，配置 `export const maxDuration = 300;`，解除 30 秒硬超时限制，并增加连接异常友好的 502 JSON 诊断，杜绝 500 崩溃页面。
+  2. **FastAPI 主事件循环阻塞**: 原 `routes.py` 的 `render_perspective_version` 声明为 `async def` 但同步执行耗时阻塞生图，锁死整个事件循环导致 TCP keep-alive 握手超时。
+     - **修复**: 重构使用 `await asyncio.to_thread(...)` 将生图与润色异步卸载至独立工作线程池，主协程事件循环持续保持健康心跳与低延迟。
+  3. **服务异常退出**: 若服务未以守护模式运行被终端误杀，直接执行 `./start.sh --daemon` 或 `./start.sh --force` 重启即可。
 
 ### Q3: 端口 8000 或 3000 被占用无法启动？
 - **解决**: 执行 `./start.sh --force`。脚本会自动识别并优雅终止占用进程树，完成端口释放后自动就绪。
