@@ -336,7 +336,7 @@ sequenceDiagram
   },
   "custom_openai": {
     "api_key": "sk-proxy********************************99a1",
-    "base_url": "https://subapi.wuinsights.top/v1",
+    "base_url": "https://api.your-proxy.com/v1",
     "model": "deepseek-chat",
     "image_model": "dall-e-3",
     "is_configured": true
