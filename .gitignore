@@ -36,3 +36,9 @@ demos/*
 .crewai/*
 logs/
 *.pid
+
+# Ecommerce Studio runtime data & credentials
+ecommerce_studio/user_config.json
+ecommerce_studio/output/
+ecommerce_studio/sessions/
+user_config.json

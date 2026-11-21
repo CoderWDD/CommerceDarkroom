@@ -1,0 +1,43 @@
+{
+  "active_provider": "gemini",
+  "gemini": {
+    "api_key": "",
+    "model": "gemini-2.0-flash",
+    "image_model": "imagen-3.0-generate-002"
+  },
+  "openai": {
+    "api_key": "",
+    "base_url": "https://api.openai.com/v1",
+    "model": "gpt-4o",
+    "image_model": "dall-e-3"
+  },
+  "custom_openai": {
+    "api_key": "",
+    "base_url": "https://api.your-proxy.com/v1",
+    "model": "deepseek-chat",
+    "image_model": "dall-e-3"
+  },
+  "ollama": {
+    "api_key": "",
+    "base_url": "http://localhost:11434/v1",
+    "model": "llama3.2-vision:latest",
+    "image_model": ""
+  },
+  "agents": {
+    "market_researcher": {
+      "name": "商品洞察专家",
+      "role": "Market Researcher",
+      "system_prompt": "你是一名顶级电商商品洞察专家与消费心理学顾问。你擅长结合商品实拍图的材质细节以及给定的竞品短板/买家顾虑，深入挖掘用户的真实抗拒点与核心购买动机，提炼出极具转化力的第一卖点（USP）。"
+    },
+    "art_director": {
+      "name": "视觉创意总监",
+      "role": "Art Director",
+      "system_prompt": "你是一名国际顶级4A广告公司的电商视觉创意总监。你擅长将买家痛点具象化为充满生活气息、高质感、高转化的真实使用场景。你需要设计场景细节、光影氛围、色调基调与构图动线，并撰写直击人心的营销文案标语。"
+    },
+    "visual_engineer": {
+      "name": "AI 制图工程师",
+      "role": "Visual Production Engineer",
+      "system_prompt": "你是一名精通商业静物摄影与 AI 生图 Prompt 的制图工程师。你必须严格锚定商品实物图的外形轮廓、主体颜色、工业材质与核心细节，将场景构想精准编译为符合商业摄影规范的高精度英文生图 Prompt（适用于 Imagen 3 / DALL-E 3）。强调 8k resolution, commercial product photography, realistic studio lighting, sharp focus, octane render."
+    }
+  }
+}
