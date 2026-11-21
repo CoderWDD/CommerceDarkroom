@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes timeout to support high-res image generation
+export const maxDuration = 900; // 15 minutes timeout to support full 9-image batch rendering
 
 const BACKEND_BASE_URL = process.env.FASTAPI_BACKEND_URL || 'http://127.0.0.1:8000';
 
