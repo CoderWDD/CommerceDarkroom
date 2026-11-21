@@ -8,6 +8,9 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
+  AlertCircle,
+  AlertTriangle,
+  RefreshCw,
 } from 'lucide-react';
 import { Perspective } from '@/types/session';
 import { useStudioStore } from '@/stores/useStudioStore';
@@ -63,6 +66,7 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
 
   const displayImageUrl = selectedVersion?.image_url || perspective.image_url;
   const isRendering = perspective.render_status === 'rendering';
+  const isError = perspective.render_status === 'error';
 
   const aspectRatioClass = {
     '1:1': 'aspect-square',
@@ -124,6 +128,15 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
                 置景布光中
               </Badge>
+            ) : isError ? (
+              <Badge
+                variant="destructive"
+                className="text-[10px] py-0 px-1.5 gap-1 bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                title={perspective.error_message}
+              >
+                <AlertCircle className="h-3 w-3 text-rose-400" />
+                出图失败
+              </Badge>
             ) : displayImageUrl ? (
               <Badge variant="success" className="text-[10px] py-0 px-1.5 gap-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -148,6 +161,28 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
               <span className="text-[11px] font-mono text-zinc-300">
                 正在渲染商业大片...
               </span>
+            </div>
+          ) : isError ? (
+            /* Error Fallback with Retry */
+            <div className="absolute inset-0 bg-rose-950/20 border border-rose-500/20 p-3 flex flex-col items-center justify-center gap-1.5 text-center">
+              <AlertTriangle className="h-6 w-6 text-rose-400" />
+              <span className="text-xs font-semibold text-rose-300">生图失败 / 接口异常</span>
+              <p className="text-[10px] text-zinc-400 line-clamp-2 px-2" title={perspective.error_message}>
+                {perspective.error_message || '当前中继代理端点未开通生图接口或连接超时'}
+              </p>
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRenderNewVersion();
+                }}
+                disabled={isRefiningSlot}
+                className="mt-1 h-6 text-[10px] gap-1 border-rose-500/40 text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
+              >
+                <RefreshCw className={`h-3 w-3 ${isRefiningSlot ? 'animate-spin' : ''}`} />
+                <span>重试此机位</span>
+              </Button>
             </div>
           ) : displayImageUrl ? (
             /* Image Preview */

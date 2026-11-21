@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Zap,
   Square,
@@ -11,10 +11,9 @@ import {
   Clock,
 } from 'lucide-react';
 import { useStudioStore } from '@/stores/useStudioStore';
+import { useBatchRenderer } from '@/hooks/useBatchRenderer';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { SSEBatchEvent } from '@/types/api';
-import { subscribeSSE } from '@/lib/sse-client';
 
 export const StudioControlBar: React.FC = () => {
   const {
@@ -22,83 +21,14 @@ export const StudioControlBar: React.FC = () => {
     setAspectRatio,
     concurrency,
     setConcurrency,
-    isBatchRendering,
-    batchProgress,
-    setBatchRenderingState,
-    setSingleCardStatus,
-    addNewVersionSnapshot,
-    currentSession,
   } = useStudioStore();
 
-  const [abortController, setAbortController] = useState<AbortController | null>(null);
-
-  const handleStartBatchRender = async () => {
-    if (!currentSession?.session_id || isBatchRendering) return;
-
-    const controller = new AbortController();
-    setAbortController(controller);
-
-    setBatchRenderingState(true, {
-      total: 9,
-      completed: 0,
-      etaSeconds: 30,
-      currentRunningIds: currentSession.perspectives.map((p) => p.id),
-    });
-
-    // Mark all cards as rendering
-    currentSession.perspectives.forEach((p) => {
-      setSingleCardStatus(p.id, 'rendering', 10);
-    });
-
-    try {
-      subscribeSSE<SSEBatchEvent>(
-        '/api/v1/studio/render-batch',
-        {
-          session_id: currentSession.session_id,
-          aspect_ratio: aspectRatio,
-          concurrency: concurrency,
-        },
-        {
-          onMessage: (event, data) => {
-            if (event === 'perspective_done' || data?.event === 'perspective_done') {
-              const pid = data.perspective_id;
-              if (pid && data.version) {
-                addNewVersionSnapshot(pid, data.version);
-                setSingleCardStatus(pid, 'success', 100);
-              }
-            } else if (event === 'progress' || data?.event === 'progress') {
-              setBatchRenderingState(true, {
-                completed: data.completed || 0,
-                total: data.total || 9,
-                etaSeconds: data.eta_seconds || 15,
-              });
-            } else if (event === 'batch_complete' || data?.event === 'batch_complete') {
-              setBatchRenderingState(false);
-            }
-          },
-          onError: (err) => {
-            console.warn('Batch render SSE interrupted, checking progress', err);
-            setBatchRenderingState(false);
-          },
-          onClose: () => {
-            setBatchRenderingState(false);
-          },
-        },
-        controller.signal
-      );
-    } catch (e) {
-      console.error('Batch render start error:', e);
-      setBatchRenderingState(false);
-    }
-  };
-
-  const handleStopBatchRender = () => {
-    if (abortController) {
-      abortController.abort();
-      setAbortController(null);
-    }
-    setBatchRenderingState(false);
-  };
+  const {
+    isBatchRendering,
+    batchProgress,
+    startBatchRender,
+    stopBatchRender,
+  } = useBatchRenderer();
 
   return (
     <div className="bg-zinc-900/60 backdrop-blur-md border border-white/[0.08] rounded-xl p-4 shadow-xl flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -184,7 +114,7 @@ export const StudioControlBar: React.FC = () => {
             <Button
               variant="destructive"
               size="sm"
-              onClick={handleStopBatchRender}
+              onClick={stopBatchRender}
               className="text-xs gap-1"
             >
               <XCircle className="h-3.5 w-3.5" />
@@ -195,7 +125,7 @@ export const StudioControlBar: React.FC = () => {
           <Button
             variant="studio-accent"
             size="sm"
-            onClick={handleStartBatchRender}
+            onClick={startBatchRender}
             className="gap-2 text-xs font-semibold px-4 h-9 shadow-md shadow-sky-500/20"
           >
             <Zap className="h-4 w-4 fill-current text-amber-300" />

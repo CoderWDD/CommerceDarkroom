@@ -53,6 +53,7 @@ interface StudioState {
     progress?: number,
     errorMsg?: string
   ) => void;
+  markAllRenderingAsError: (reason?: string) => void;
   setBatchRenderingState: (rendering: boolean, progress?: Partial<BatchProgress>) => void;
 
   // Session Lifecycle
@@ -288,6 +289,29 @@ export const useStudioStore = create<StudioState>()(
           currentSession: {
             ...currentSession,
             perspectives: updatedPerspectives,
+          },
+        });
+      },
+
+      markAllRenderingAsError: (reason = '渲染被中止或超时熔断') => {
+        const { currentSession } = get();
+        if (!currentSession) return;
+        const updated = currentSession.perspectives.map((p) => {
+          if (p.render_status === 'rendering') {
+            return {
+              ...p,
+              render_status: 'error' as const,
+              error_message: reason,
+              render_progress: 0,
+            };
+          }
+          return p;
+        });
+        set({
+          isBatchRendering: false,
+          currentSession: {
+            ...currentSession,
+            perspectives: updated,
           },
         });
       },
