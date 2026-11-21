@@ -432,7 +432,7 @@ start_services() {
     log_info "正在启动后端服务 (FastAPI / 端口 8000)..."
     (
         cd "${PROJECT_ROOT}"
-        exec nohup "$PYTHON_CMD" ecommerce_studio/server.py --host 0.0.0.0 --port 8000
+        exec nohup "$PYTHON_CMD" ecommerce_studio/server.py --host 0.0.0.0 --port 8000 --reload
     ) >> "${BACKEND_LOG}" 2>&1 &
     BACKEND_PID=$!
     echo "$BACKEND_PID" > "${BACKEND_PID_FILE}"
@@ -569,6 +569,7 @@ main() {
     if [ "$DAEMON_MODE" = "true" ]; then
         # 后台模式：解除信号捕获与作业依附，使进程在当前会话退出后继续常驻
         CLEANED_UP=true
+        disown -a 2>/dev/null || true
         trap - SIGINT SIGTERM EXIT
         exit 0
     fi
