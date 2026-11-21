@@ -5,7 +5,7 @@ import { useStudioStore } from '@/stores/useStudioStore';
 import { subscribeSSE } from '@/lib/sse-client';
 import { SSEBatchEvent } from '@/types/api';
 
-const INACTIVITY_TIMEOUT_MS = 120000; // 120s 动态活动超时保镖（每当收到任意卡片进度或完成事件时自动刷新）
+const INACTIVITY_TIMEOUT_MS = 180000; // 180s 动态活动超时保镖（每当收到任意卡片进度、心跳包或完成事件时自动刷新）
 const MAX_TOTAL_TIMEOUT_MS = 900000; // 15 分钟全局安全熔断兜底
 
 export function useBatchRenderer() {
@@ -129,6 +129,11 @@ export function useBatchRenderer() {
 
             const rawEvent = (data?.event || event || '').toLowerCase();
 
+            // 0. 心跳 Ping 保活事件：看门狗已在上方重置，无需触发任何 UI 状态变更
+            if (rawEvent === 'ping') {
+              return;
+            }
+
             // 1. 单机位开始
             if (rawEvent === 'perspective_start') {
               const pid = data.perspective_id;
@@ -150,6 +155,17 @@ export function useBatchRenderer() {
                 }
                 setSingleCardStatus(pid, 'success', 100);
               }
+
+              // 实时更新顶部批量渲染进度条与剩余估算时间
+              if (typeof data.completed === 'number') {
+                const total = data.total || totalCards;
+                const remaining = Math.max(0, total - data.completed);
+                setBatchRenderingState(true, {
+                  completed: data.completed,
+                  total,
+                  etaSeconds: remaining * 20,
+                });
+              }
             }
             // 3. 单机位失败 / 异常报错（精准熔断单卡片，绝不卡在骨架屏）
             else if (rawEvent === 'perspective_error') {
@@ -160,6 +176,17 @@ export function useBatchRenderer() {
                 const elapsed = start ? ((Date.now() - start) / 1000).toFixed(1) : '?';
                 console.error(`❌ [Batch Render] Perspective error after ${elapsed}s: ${pid}: ${errorMsg}`);
                 setSingleCardStatus(pid, 'error', 0, errorMsg);
+              }
+
+              // 同步更新进度条
+              if (typeof data.completed === 'number') {
+                const total = data.total || totalCards;
+                const remaining = Math.max(0, total - data.completed);
+                setBatchRenderingState(true, {
+                  completed: data.completed,
+                  total,
+                  etaSeconds: remaining * 20,
+                });
               }
             }
             // 4. 进度同步

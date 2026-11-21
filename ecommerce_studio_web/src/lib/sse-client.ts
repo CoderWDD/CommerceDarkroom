@@ -20,6 +20,7 @@ export function subscribeSSE<T = Record<string, unknown>>(
     },
     body: JSON.stringify(payload),
     signal: abortSignal,
+    openWhenHidden: true, // 核心加固：防止用户切换浏览器标签页或窗口失焦时连接被意外中止
     async onopen(response) {
       if (response.ok && response.headers.get('content-type')?.includes('text/event-stream')) {
         return;
@@ -34,6 +35,9 @@ export function subscribeSSE<T = Record<string, unknown>>(
         } catch {
           callbacks.onMessage(msg.event || 'message', msg.data as unknown as T);
         }
+      } else {
+        // 心跳包/注释行事件保活：通知上层看门狗刷新活跃状态
+        callbacks.onMessage(msg.event || 'ping', { event: msg.event || 'ping' } as unknown as T);
       }
     },
     onerror(err) {

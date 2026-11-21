@@ -58,6 +58,9 @@ async function forwardRequest(req: NextRequest, { params }: { params: { path: st
     });
 
     if (isStream) {
+      responseHeaders.set('Cache-Control', 'no-cache, no-transform');
+      responseHeaders.set('Connection', 'keep-alive');
+      responseHeaders.set('X-Accel-Buffering', 'no');
       return new Response(backendRes.body, {
         status: backendRes.status,
         headers: responseHeaders,
