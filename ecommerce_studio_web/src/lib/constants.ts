@@ -18,7 +18,7 @@ export const STANDARD_PERSPECTIVES_META: Array<Omit<Perspective, 'prompt_zh' | '
     psychology_target: '唤醒消费者对美好居家/办公品质生活的向往，建立情感共鸣',
   },
   {
-    id: '03_macro',
+    id: '03_detail',
     name: '材质工艺与微距细节图',
     tag: '超浅景深精工细节',
     desc: '85mm微距大光圈特写，细腻哑光漫反射与金属拉丝交界，极致工业质感',
@@ -26,7 +26,7 @@ export const STANDARD_PERSPECTIVES_META: Array<Omit<Perspective, 'prompt_zh' | '
     psychology_target: '消除廉价塑料感，通过精工级细节特写支撑品牌高端溢价',
   },
   {
-    id: '04_exploded',
+    id: '04_structure',
     name: '结构拆解与核心技术图',
     tag: '核心黑科技可视化',
     desc: '悬浮微距爆炸透视，多层密封结构、温控数显芯片与医用级内胆层层呈现',
@@ -34,7 +34,7 @@ export const STANDARD_PERSPECTIVES_META: Array<Omit<Perspective, 'prompt_zh' | '
     psychology_target: '硬核可视化黑科技，直观展现精密工艺，满足理性参数党',
   },
   {
-    id: '05_pain_point',
+    id: '05_pain_killer',
     name: '痛点场景攻坚图',
     tag: '打消渗水/烫嘴退货疑虑',
     desc: '背包收纳或倒置严密防护情境，精准展现严密气密防漏与安全阻热承诺',
@@ -42,7 +42,7 @@ export const STANDARD_PERSPECTIVES_META: Array<Omit<Perspective, 'prompt_zh' | '
     psychology_target: '正面攻克历史差评与决策抗拒点，给买家绝对下单安全感',
   },
   {
-    id: '06_scale',
+    id: '06_size',
     name: '便携携带与比例参照图',
     tag: '真实体感无尺码偏差',
     desc: '都市青年自然手持随行或放入标准车载杯架，真实人手比例，直观呈现量感',
@@ -50,7 +50,7 @@ export const STANDARD_PERSPECTIVES_META: Array<Omit<Perspective, 'prompt_zh' | '
     psychology_target: '真实呈现便携握持手感与空间占用，避免到手尺寸心理落差',
   },
   {
-    id: '07_atmosphere',
+    id: '07_emotional',
     name: '品牌情绪与质感氛围图',
     tag: '高端品牌溢价塑造',
     desc: '极简深色暗调布景，狭长轮廓冷金边光勾勒，杂志封面级视觉张力',
@@ -58,7 +58,7 @@ export const STANDARD_PERSPECTIVES_META: Array<Omit<Perspective, 'prompt_zh' | '
     psychology_target: '营造高端精致的格调美学，加深品牌轻奢印记，促进高客单转化',
   },
   {
-    id: '08_variants',
+    id: '08_color',
     name: '全系配色与规格陈列图',
     tag: '丰富选择促进连单',
     desc: '曜石黑、深空钛、皓月白经典色系矩阵平齐陈列，统一光影质感',
@@ -66,7 +66,7 @@ export const STANDARD_PERSPECTIVES_META: Array<Omit<Perspective, 'prompt_zh' | '
     psychology_target: '提供丰富选款体验，满足个性化审美偏好，促进情侣/送礼连带购买',
   },
   {
-    id: '09_social',
+    id: '09_buyer_show',
     name: '真实买家秀种草图',
     tag: '社交真实感与口碑背书',
     desc: '自然采光下的桌面一角，无刻意摆拍的真实生活抓拍，小红书生活美学感',

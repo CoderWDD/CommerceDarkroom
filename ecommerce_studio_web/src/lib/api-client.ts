@@ -103,8 +103,13 @@ export const studioApi = {
     return await res.json();
   },
 
-  // 5. Step 3: 单镜头微调渲染 (产出新版本快照)
-  async renderSlot(payload: RenderSlotRequest): Promise<PerspectiveVersion> {
+  // 5. Step 3: 单镜头微调渲染 (产出新版本快照与完整同步会话)
+  async renderSlot(payload: RenderSlotRequest): Promise<{
+    success: boolean;
+    perspective_id: string;
+    version: PerspectiveVersion;
+    session?: StudioSession;
+  }> {
     const res = await fetch(`${BASE_URL}/refine-slot`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -119,7 +124,13 @@ export const studioApi = {
       throw new Error(errMsg);
     }
     const data = await res.json();
-    return data.version || data;
+    const versionObj = data.version || data;
+    return {
+      success: data.success ?? true,
+      perspective_id: data.perspective_id || payload.perspective_id,
+      version: versionObj,
+      session: data.session,
+    };
   },
 
   // 6. Step 3: 版本回滚

@@ -129,6 +129,10 @@ export function useBatchRenderer() {
             else if (rawEvent === 'batch_complete' || rawEvent === 'complete') {
               clearTimer();
               setBatchRenderingState(false);
+              // 同步权威 session 数据至前端状态库，确保 9 大图全量即时刷出
+              if (data.session) {
+                useStudioStore.getState().setSession(data.session);
+              }
               // 兜底安全：将任何遗留的 rendering 卡片置为完成或关闭
               const storeSession = useStudioStore.getState().currentSession;
               if (storeSession) {

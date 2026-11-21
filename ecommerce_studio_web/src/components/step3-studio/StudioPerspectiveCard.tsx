@@ -82,7 +82,7 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
     const changeReason = refineInstruction.trim() || '二次商业布景微调渲染';
 
     try {
-      const newVersion = await studioApi.renderSlot({
+      const res = await studioApi.renderSlot({
         session_id: currentSession.session_id,
         perspective_id: perspective.id,
         prompt_zh: perspective.prompt_zh,
@@ -92,11 +92,15 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
         aspect_ratio: aspectRatio,
       });
 
-      if (newVersion) {
-        addNewVersionSnapshot(perspective.id, newVersion);
-        setRefineInstruction('');
-        setIsRefineOpen(false);
+      if (res?.session) {
+        useStudioStore.getState().setSession(res.session);
       }
+      if (res?.version) {
+        addNewVersionSnapshot(perspective.id, res.version);
+      }
+      setSingleCardStatus(perspective.id, 'success', 100);
+      setRefineInstruction('');
+      setIsRefineOpen(false);
     } catch (e: unknown) {
       console.error('Slot rendering error:', e);
       const errMsg = e instanceof Error ? e.message : '渲染失败';

@@ -10,6 +10,15 @@ import {
 import { STANDARD_PERSPECTIVES_META } from '@/lib/constants';
 import { studioApi } from '@/lib/api-client';
 
+export function matchPerspectiveId(id1?: string | null, id2?: string | null): boolean {
+  if (!id1 || !id2) return false;
+  if (id1 === id2) return true;
+  if (id1.length >= 2 && id2.length >= 2 && id1.substring(0, 2) === id2.substring(0, 2)) {
+    return true;
+  }
+  return false;
+}
+
 interface BatchProgress {
   total: number;
   completed: number;
@@ -182,7 +191,7 @@ export const useStudioStore = create<StudioState>()(
         const { currentSession } = get();
         if (!currentSession) return;
 
-        const targetP = currentSession.perspectives.find((p) => p.id === perspectiveId);
+        const targetP = currentSession.perspectives.find((p) => matchPerspectiveId(p.id, perspectiveId));
         if (!targetP) return;
 
         const targetVersion = targetP.versions.find(
@@ -192,7 +201,7 @@ export const useStudioStore = create<StudioState>()(
 
         // 乐观更新 (Optimistic UI Update)
         const updatedPerspectives = currentSession.perspectives.map((p) => {
-          if (p.id === perspectiveId) {
+          if (matchPerspectiveId(p.id, perspectiveId)) {
             return {
               ...p,
               active_version_id: targetVersion.version_id,
@@ -214,6 +223,7 @@ export const useStudioStore = create<StudioState>()(
           selectedPreviewVersions: {
             ...get().selectedPreviewVersions,
             [perspectiveId]: targetVersion.version_id,
+            [targetP.id]: targetVersion.version_id,
           },
         });
 
@@ -233,8 +243,10 @@ export const useStudioStore = create<StudioState>()(
         const { currentSession } = get();
         if (!currentSession) return;
 
+        let matchedCardId = perspectiveId;
         const updatedPerspectives = currentSession.perspectives.map((p) => {
-          if (p.id === perspectiveId) {
+          if (matchPerspectiveId(p.id, perspectiveId)) {
+            matchedCardId = p.id;
             const exists = p.versions.some((v) => v.version_id === newVersion.version_id);
             const versions = exists
               ? p.versions.map((v) => (v.version_id === newVersion.version_id ? newVersion : v))
@@ -265,6 +277,7 @@ export const useStudioStore = create<StudioState>()(
           selectedPreviewVersions: {
             ...get().selectedPreviewVersions,
             [perspectiveId]: newVersion.version_id,
+            [matchedCardId]: newVersion.version_id,
           },
         });
       },
@@ -274,7 +287,7 @@ export const useStudioStore = create<StudioState>()(
         if (!currentSession) return;
 
         const updatedPerspectives = currentSession.perspectives.map((p) => {
-          if (p.id === perspectiveId) {
+          if (matchPerspectiveId(p.id, perspectiveId)) {
             return {
               ...p,
               render_status: status,

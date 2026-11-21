@@ -1,4 +1,4 @@
-import { PerspectiveVersion, ProductDossier } from './session';
+import { PerspectiveVersion, ProductDossier, StudioSession } from './session';
 
 export interface CreateSessionRequest {
   name?: string;
@@ -67,6 +67,7 @@ export interface SSEBatchEvent {
   completed?: number;
   eta_seconds?: number;
   version?: PerspectiveVersion;
+  session?: StudioSession;
   error?: string;
   message?: string;
 }
