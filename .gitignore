@@ -34,3 +34,5 @@ secrets/*
 UNKNOWN.egg-info/
 demos/*
 .crewai/*
+logs/
+*.pid
