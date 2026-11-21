@@ -114,6 +114,13 @@ export function useBatchRenderer() {
       }
     }, MAX_TOTAL_TIMEOUT_MS);
 
+    const promptsMap: Record<string, string> = {};
+    currentSession.perspectives?.forEach((p) => {
+      if (p.id && p.prompt_zh) {
+        promptsMap[p.id] = p.prompt_zh;
+      }
+    });
+
     try {
       subscribeSSE<SSEBatchEvent>(
         '/api/v1/studio/render-batch',
@@ -121,6 +128,7 @@ export function useBatchRenderer() {
           session_id: currentSession.session_id,
           aspect_ratio: aspectRatio,
           concurrency: 1, // 强制并发为 1
+          prompts: promptsMap,
         },
         {
           onMessage: (event, data) => {
@@ -131,6 +139,18 @@ export function useBatchRenderer() {
 
             // 0. 心跳 Ping 保活事件：看门狗已在上方重置，无需触发任何 UI 状态变更
             if (rawEvent === 'ping') {
+              return;
+            }
+
+            // 0.1 服务端全局报错事件 (如网络或会话异常)
+            if (rawEvent === 'error') {
+              const errMsg = data?.error || (data as unknown as { message?: string })?.message || '批量生图服务端中断';
+              console.error('❌ [Batch Render Error from Server]:', errMsg);
+              clearAllTimers();
+              setBatchRenderingState(false);
+              if (markAllRenderingAsError) {
+                markAllRenderingAsError(errMsg);
+              }
               return;
             }
 
@@ -229,6 +249,15 @@ export function useBatchRenderer() {
           onClose: () => {
             clearAllTimers();
             setBatchRenderingState(false);
+            const storeSession = useStudioStore.getState().currentSession;
+            if (storeSession) {
+              const hasUnfinished = storeSession.perspectives.some(
+                (p) => p.render_status === 'rendering' || p.render_status === 'pending'
+              );
+              if (hasUnfinished && markAllRenderingAsError) {
+                markAllRenderingAsError('连接已结束，部分机位出图未就绪');
+              }
+            }
           },
         },
         controller.signal

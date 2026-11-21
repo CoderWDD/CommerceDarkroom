@@ -13,16 +13,21 @@ import { CopilotDrawer } from '@/components/copilot/CopilotDrawer';
 import { CopilotTriggerFab } from '@/components/copilot/CopilotTriggerFab';
 
 export default function StudioPage() {
-  const { currentSession, currentStep, initDefaultSession, fetchSessionList } =
+  const { currentStep, initDefaultSession, fetchSessionList } =
     useStudioStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    fetchSessionList();
-    if (!currentSession) {
-      initDefaultSession();
-    }
+    fetchSessionList().then(() => {
+      const current = useStudioStore.getState().currentSession;
+      const list = useStudioStore.getState().sessionList;
+      if ((!current || current.session_id.endsWith('_init')) && list.length > 0) {
+        useStudioStore.getState().loadSession(list[0].session_id);
+      } else if (!current) {
+        initDefaultSession();
+      }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
