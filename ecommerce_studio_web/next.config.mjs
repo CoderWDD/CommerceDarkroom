@@ -1,17 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: '/api/v1/studio/:path*',
-        destination: `${process.env.FASTAPI_BACKEND_URL || 'http://127.0.0.1:8000'}/api/v1/studio/:path*`,
-      },
-      {
-        source: '/output/:path*',
-        destination: `${process.env.FASTAPI_BACKEND_URL || 'http://127.0.0.1:8000'}/output/:path*`,
-      },
-    ];
-  },
+  // 由 Next.js App Router API Route Handler 原生网关转发，解除 http-proxy 硬编码 30s 超时限制
   images: {
     unoptimized: true,
   },
