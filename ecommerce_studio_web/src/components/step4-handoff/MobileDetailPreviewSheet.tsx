@@ -3,6 +3,7 @@
 import React, { useRef } from 'react';
 import { Smartphone, ChevronRight } from 'lucide-react';
 import { useStudioStore } from '@/stores/useStudioStore';
+import { formatAssetUrl } from '@/lib/constants';
 
 export const MobileDetailPreviewSheet: React.FC = () => {
   const { currentSession, selectedPreviewVersions } = useStudioStore();
@@ -41,7 +42,7 @@ export const MobileDetailPreviewSheet: React.FC = () => {
               p.versions.find((v) => String(v.version_id) === String(selectedVersionId)) ||
               p.versions.find((v) => String(v.version_id) === String(p.active_version_id));
 
-            const imageUrl = activeVersion?.image_url || p.image_url;
+            const imageUrl = formatAssetUrl(activeVersion?.image_url || p.image_url);
 
             return (
               <div

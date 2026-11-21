@@ -6,6 +6,7 @@ import { useStudioStore } from '@/stores/useStudioStore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { formatAssetUrl } from '@/lib/constants';
 
 export const MasterAssetGrid: React.FC = () => {
   const { currentSession, selectedPreviewVersions } = useStudioStore();
@@ -25,7 +26,7 @@ export const MasterAssetGrid: React.FC = () => {
             p.versions.find((v) => String(v.version_id) === String(selectedVersionId)) ||
             p.versions.find((v) => String(v.version_id) === String(p.active_version_id));
 
-          const imageUrl = activeVersion?.image_url || p.image_url;
+          const imageUrl = formatAssetUrl(activeVersion?.image_url || p.image_url);
 
           return (
             <div

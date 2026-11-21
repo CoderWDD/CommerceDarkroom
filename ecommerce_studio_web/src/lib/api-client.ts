@@ -9,8 +9,9 @@ import {
   CopilotChatRequest,
 } from '@/types/api';
 import { StudioSession, SessionSummary, PerspectiveVersion } from '@/types/session';
+import { getApiBaseUrl } from '@/lib/constants';
 
-const BASE_URL = '/api/v1/studio';
+const getBaseUrl = () => getApiBaseUrl();
 
 async function timedFetch(url: string, init?: RequestInit): Promise<Response> {
   const method = init?.method || 'GET';
@@ -31,7 +32,7 @@ export const studioApi = {
   // 1. 会话列表与管理
   async listSessions(): Promise<SessionSummary[]> {
     try {
-      const res = await timedFetch(`${BASE_URL}/sessions`);
+      const res = await timedFetch(`${getBaseUrl()}/sessions`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e) {
@@ -41,7 +42,7 @@ export const studioApi = {
   },
 
   async createSession(payload?: CreateSessionRequest): Promise<StudioSession> {
-    const res = await timedFetch(`${BASE_URL}/sessions`, {
+    const res = await timedFetch(`${getBaseUrl()}/sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload || {}),
@@ -51,20 +52,20 @@ export const studioApi = {
   },
 
   async getSession(sessionId: string): Promise<StudioSession> {
-    const res = await timedFetch(`${BASE_URL}/sessions/${sessionId}`);
+    const res = await timedFetch(`${getBaseUrl()}/sessions/${sessionId}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch session`);
     return await res.json();
   },
 
   async deleteSession(sessionId: string): Promise<boolean> {
-    const res = await timedFetch(`${BASE_URL}/sessions/${sessionId}`, {
+    const res = await timedFetch(`${getBaseUrl()}/sessions/${sessionId}`, {
       method: 'DELETE',
     });
     return res.ok;
   },
 
   async updateSessionName(sessionId: string, name: string): Promise<boolean> {
-    const res = await timedFetch(`${BASE_URL}/sessions/${sessionId}`, {
+    const res = await timedFetch(`${getBaseUrl()}/sessions/${sessionId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
@@ -81,7 +82,7 @@ export const studioApi = {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('is_primary', String(isPrimary));
-    const res = await timedFetch(`${BASE_URL}/sessions/${sessionId}/assets/upload`, {
+    const res = await timedFetch(`${getBaseUrl()}/sessions/${sessionId}/assets/upload`, {
       method: 'POST',
       body: formData,
     });
@@ -91,7 +92,7 @@ export const studioApi = {
 
   // 3. Step 1 -> Step 2: 9大商业矩阵推演
   async planMatrix(payload: PlanMatrixRequest): Promise<StudioSession> {
-    const res = await timedFetch(`${BASE_URL}/plan`, {
+    const res = await timedFetch(`${getBaseUrl()}/plan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -102,7 +103,7 @@ export const studioApi = {
 
   // 4. Step 2: 策划案灵感润色 (AI Magic Refiner)
   async refinePrompt(payload: RefinePromptRequest): Promise<RefinePromptResponse> {
-    const res = await timedFetch(`${BASE_URL}/refine-prompt`, {
+    const res = await timedFetch(`${getBaseUrl()}/refine-prompt`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -125,7 +126,7 @@ export const studioApi = {
     version: PerspectiveVersion;
     session?: StudioSession;
   }> {
-    const res = await timedFetch(`${BASE_URL}/refine-slot`, {
+    const res = await timedFetch(`${getBaseUrl()}/refine-slot`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -150,7 +151,7 @@ export const studioApi = {
 
   // 6. Step 3: 版本回滚
   async rollbackVersion(payload: RollbackRequest): Promise<RollbackResponse> {
-    const res = await timedFetch(`${BASE_URL}/rollback`, {
+    const res = await timedFetch(`${getBaseUrl()}/rollback`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -175,7 +176,7 @@ export const studioApi = {
       label: string;
     };
   }> {
-    const res = await timedFetch(`${BASE_URL}/copilot/chat`, {
+    const res = await timedFetch(`${getBaseUrl()}/copilot/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -186,10 +187,10 @@ export const studioApi = {
 
   // 8. 交付下载链接
   getZipExportUrl(sessionId: string): string {
-    return `${BASE_URL}/sessions/${sessionId}/export/zip`;
+    return `${getBaseUrl()}/sessions/${sessionId}/export/zip`;
   },
 
   getMarkdownExportUrl(sessionId: string): string {
-    return `${BASE_URL}/sessions/${sessionId}/export/markdown`;
+    return `${getBaseUrl()}/sessions/${sessionId}/export/markdown`;
   },
 };

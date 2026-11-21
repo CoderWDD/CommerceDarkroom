@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { StudioConfig, TestConnectionParams, TestConnectionResult } from "@/types/config";
+import { getApiBaseUrl } from "@/lib/constants";
 
 interface ConfigStoreState {
   config: StudioConfig | null;
@@ -35,7 +36,7 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => ({
   fetchConfig: async () => {
     set({ isLoading: true });
     try {
-      const res = await fetch("/api/v1/studio/config");
+      const res = await fetch(`${getApiBaseUrl()}/config`);
       if (!res.ok) throw new Error("获取配置失败");
       const data: StudioConfig = await res.json();
       set({ config: data });
@@ -49,7 +50,7 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => ({
   updateConfig: async (payload) => {
     set({ isSaving: true });
     try {
-      const res = await fetch("/api/v1/studio/config", {
+      const res = await fetch(`${getApiBaseUrl()}/config`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -68,7 +69,7 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => ({
   testConnection: async (params) => {
     set({ isTesting: true, testResult: null });
     try {
-      const res = await fetch("/api/v1/studio/config/test", {
+      const res = await fetch(`${getApiBaseUrl()}/config/test`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(params),
@@ -95,7 +96,7 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => ({
   resetToDefaults: async () => {
     if (typeof window !== "undefined" && !window.confirm("确认重置所有模型配置为出厂默认值吗？")) return;
     try {
-      const res = await fetch("/api/v1/studio/config/reset", { method: "POST" });
+      const res = await fetch(`${getApiBaseUrl()}/config/reset`, { method: "POST" });
       if (res.ok) {
         await get().fetchConfig();
         set({ testResult: null });

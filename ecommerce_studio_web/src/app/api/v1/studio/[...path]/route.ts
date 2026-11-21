@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 900; // 15 minutes timeout to support full 9-image batch rendering
 
-const BACKEND_BASE_URL = process.env.FASTAPI_BACKEND_URL || 'http://127.0.0.1:8000';
+const BACKEND_BASE_URL = process.env.FASTAPI_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 async function forwardRequest(req: NextRequest, { params }: { params: { path: string[] } }) {
   const subPath = (params.path || []).join('/');

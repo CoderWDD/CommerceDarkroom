@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { studioApi } from '@/lib/api-client';
+import { formatAssetUrl } from '@/lib/constants';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface StudioPerspectiveCardProps {
@@ -65,7 +66,7 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
       (v) => String(v.version_id) === String(activeVersionId) || String(v.version_num) === String(activeVersionId)
     );
 
-  const displayImageUrl = selectedVersion?.image_url || perspective.image_url;
+  const displayImageUrl = formatAssetUrl(selectedVersion?.image_url || perspective.image_url);
   const isRendering = perspective.render_status === 'rendering';
   const isPending = perspective.render_status === 'pending';
   const isError = perspective.render_status === 'error';

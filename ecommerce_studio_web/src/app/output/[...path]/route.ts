@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-const BACKEND_BASE_URL = process.env.FASTAPI_BACKEND_URL || 'http://127.0.0.1:8000';
+const BACKEND_BASE_URL = process.env.FASTAPI_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 export async function GET(_req: Request, { params }: { params: { path: string[] } }) {
   const subPath = (params.path || []).join('/');

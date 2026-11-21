@@ -3,6 +3,7 @@
 import { useRef, useCallback } from 'react';
 import { useStudioStore } from '@/stores/useStudioStore';
 import { subscribeSSE } from '@/lib/sse-client';
+import { getApiBaseUrl } from '@/lib/constants';
 import { SSEBatchEvent } from '@/types/api';
 
 const INACTIVITY_TIMEOUT_MS = 180000; // 180s 动态活动超时保镖（每当收到任意卡片进度、心跳包或完成事件时自动刷新）
@@ -123,7 +124,7 @@ export function useBatchRenderer() {
 
     try {
       subscribeSSE<SSEBatchEvent>(
-        '/api/v1/studio/render-batch',
+        `${getApiBaseUrl()}/render-batch`,
         {
           session_id: currentSession.session_id,
           aspect_ratio: aspectRatio,

@@ -113,3 +113,24 @@ export const DEMO_PRESETS = [
     },
   },
 ];
+
+export const getApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) {
+    return `${process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '')}/api/v1/studio`;
+  }
+  return '/api/v1/studio';
+};
+
+export const formatAssetUrl = (url?: string | null): string => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) {
+    const base = process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
+    return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+  return url;
+};
+
+

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { formatAssetUrl } from '@/lib/constants';
 
 interface VersionDiffModalProps {
   isOpen: boolean;
@@ -164,7 +165,7 @@ export const VersionDiffModal: React.FC<VersionDiffModalProps> = ({
                   {versionA.image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={versionA.image_url}
+                      src={formatAssetUrl(versionA.image_url)}
                       alt="Version A"
                       className="w-full h-full object-cover"
                     />
@@ -186,7 +187,7 @@ export const VersionDiffModal: React.FC<VersionDiffModalProps> = ({
                   {versionB.image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={versionB.image_url}
+                      src={formatAssetUrl(versionB.image_url)}
                       alt="Version B"
                       className="w-full h-full object-cover"
                     />
@@ -209,7 +210,7 @@ export const VersionDiffModal: React.FC<VersionDiffModalProps> = ({
               {versionA.image_url && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={versionA.image_url}
+                  src={formatAssetUrl(versionA.image_url)}
                   alt="Version A"
                   className="absolute inset-0 w-full h-full object-cover"
                 />
@@ -219,7 +220,7 @@ export const VersionDiffModal: React.FC<VersionDiffModalProps> = ({
               {versionB.image_url && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={versionB.image_url}
+                  src={formatAssetUrl(versionB.image_url)}
                   alt="Version B"
                   className="absolute inset-0 w-full h-full object-cover"
                   style={{
