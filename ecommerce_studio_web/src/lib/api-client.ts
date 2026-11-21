@@ -92,7 +92,14 @@ export const studioApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Prompt refinement failed`);
+    if (!res.ok) {
+      let errMsg = `HTTP ${res.status}: Prompt refinement failed`;
+      try {
+        const errJson = await res.json();
+        if (errJson.detail) errMsg = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail);
+      } catch {}
+      throw new Error(errMsg);
+    }
     return await res.json();
   },
 
@@ -103,8 +110,16 @@ export const studioApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Slot rendering failed`);
-    return await res.json();
+    if (!res.ok) {
+      let errMsg = `HTTP ${res.status}: Slot rendering failed`;
+      try {
+        const errJson = await res.json();
+        if (errJson.detail) errMsg = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail);
+      } catch {}
+      throw new Error(errMsg);
+    }
+    const data = await res.json();
+    return data.version || data;
   },
 
   // 6. Step 3: 版本回滚
@@ -114,7 +129,14 @@ export const studioApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Rollback failed`);
+    if (!res.ok) {
+      let errMsg = `HTTP ${res.status}: Rollback failed`;
+      try {
+        const errJson = await res.json();
+        if (errJson.detail) errMsg = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail);
+      } catch {}
+      throw new Error(errMsg);
+    }
     return await res.json();
   },
 

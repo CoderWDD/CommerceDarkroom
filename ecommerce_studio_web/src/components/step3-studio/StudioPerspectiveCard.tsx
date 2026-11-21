@@ -86,6 +86,7 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
         session_id: currentSession.session_id,
         perspective_id: perspective.id,
         prompt_zh: perspective.prompt_zh,
+        instruction: refineInstruction.trim() || undefined,
         change_reason: changeReason,
         trigger_type: 'manual_edit',
         aspect_ratio: aspectRatio,

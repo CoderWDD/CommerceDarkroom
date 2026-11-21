@@ -31,7 +31,9 @@ export interface RenderBatchRequest {
 export interface RenderSlotRequest {
   session_id: string;
   perspective_id: string;
-  prompt_zh: string;
+  prompt_zh?: string;
+  instruction?: string;
+  user_feedback?: string;
   change_reason?: string;
   trigger_type?: 'manual_edit' | 'copilot_refine' | 'batch_initial';
   aspect_ratio?: '1:1' | '3:4' | '16:9';
