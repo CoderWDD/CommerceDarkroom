@@ -432,7 +432,7 @@ start_services() {
     log_info "正在启动后端服务 (FastAPI / 端口 8000)..."
     (
         cd "${PROJECT_ROOT}"
-        exec nohup "$PYTHON_CMD" ecommerce_studio/server.py --host 0.0.0.0 --port 8000 --reload
+        exec nohup "$PYTHON_CMD" ecommerce_studio/server.py --host 0.0.0.0 --port 8000
     ) >> "${BACKEND_LOG}" 2>&1 &
     BACKEND_PID=$!
     echo "$BACKEND_PID" > "${BACKEND_PID_FILE}"
