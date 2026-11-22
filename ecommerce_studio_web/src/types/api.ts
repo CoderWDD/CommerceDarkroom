@@ -1,13 +1,44 @@
-import { PerspectiveVersion, ProductDossier, StudioSession } from './session';
+import {
+  PerspectiveVersion,
+  Perspective,
+  PerspectiveItem,
+  QuickTweakItem,
+  ProductDossier,
+  ProductDossierExtracted,
+  StudioSession,
+  StylePreset,
+  StylePresetId,
+  VisionExtractDossierResponse,
+} from './session';
+
+export type {
+  StylePresetId,
+  StylePreset,
+  ProductDossierExtracted,
+  VisionExtractDossierResponse,
+  Perspective,
+  PerspectiveItem,
+  QuickTweakItem,
+};
 
 export interface CreateSessionRequest {
   name?: string;
   product_info?: Partial<ProductDossier>;
+  style_preset?: StylePresetId | string;
 }
 
 export interface PlanMatrixRequest {
   session_id: string;
   product_info: ProductDossier;
+  style_preset?: StylePresetId | string;
+  stream?: boolean;
+}
+
+export interface VisionExtractDossierRequest {
+  session_id?: string;
+  asset_url?: string;
+  asset_path?: string;
+  category_hint?: string;
 }
 
 export interface RefinePromptRequest {
@@ -19,6 +50,25 @@ export interface RefinePromptRequest {
 
 export interface RefinePromptResponse {
   refined_prompt: string;
+}
+
+export interface RegeneratePerspectiveScriptRequest {
+  session_id?: string;
+  perspective_id?: string;
+  instruction?: string;
+  current_prompt?: string;
+}
+
+export interface RegeneratePerspectiveScriptResponse {
+  success: boolean;
+  session_id?: string;
+  perspective_id: string;
+  name: string;
+  scene_highlight: string;
+  commercial_strategy: string;
+  prompt_zh: string;
+  quick_tweaks?: QuickTweakItem[];
+  quick_tweak_pills?: string[];
 }
 
 export interface RenderBatchRequest {

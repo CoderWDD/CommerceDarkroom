@@ -28,8 +28,11 @@ from ecommerce_studio.api.schemas import (
     CreateSessionRequest,
     PerspectiveVersion,
     PlanRequest,
+    ProductDossierExtracted,
     RefinePromptRequest,
     RefineSlotRequest,
+    RegeneratePerspectiveScriptRequest,
+    RegeneratePerspectiveScriptResponse,
     RenderVersionRequest,
     RollbackRequest,
     SessionSummary,
@@ -38,12 +41,15 @@ from ecommerce_studio.api.schemas import (
     TestConnectionResponse,
     UpdateConfigRequest,
     UpdatePromptRequest,
+    VisionExtractDossierRequest,
+    VisionExtractDossierResponse,
 )
 from ecommerce_studio.api.service import (
     canonicalize_perspective_id,
     path_to_asset_url,
     studio_service,
 )
+from ecommerce_studio.style_presets import StylePreset, list_style_presets
 
 router = APIRouter(prefix="/api/v1/studio", tags=["Ecommerce Studio API"])
 
@@ -63,7 +69,8 @@ async def create_session(payload: Optional[CreateSessionRequest] = None):
     """创建全新策划专案"""
     name = payload.name if payload else ""
     prod_info = payload.product_info if payload else {}
-    return studio_service.create_session(name=name, product_info=prod_info)
+    style_preset = (payload.style_preset if payload else None) or "minimalist_muji"
+    return studio_service.create_session(name=name, product_info=prod_info, style_preset=style_preset)
 
 
 @router.get("/sessions/{session_id}", response_model=StudioSession)
@@ -87,6 +94,78 @@ async def delete_session(session_id: str):
 # --------------------------------------------------------------------------
 # 2. 实物资产上传与多模态预解析 (Asset Upload & Semantic Ingestion)
 # --------------------------------------------------------------------------
+
+@router.get("/style-presets", response_model=List[StylePreset])
+async def get_style_presets():
+    """获取 5 大官方爆款视觉风格流派参数注册表"""
+    return list_style_presets()
+
+
+@router.post("/vision/extract-dossier", response_model=VisionExtractDossierResponse)
+async def extract_product_dossier(
+    request: Request,
+    session_id: Optional[str] = Form(None),
+    asset_url: Optional[str] = Form(None),
+    category_hint: Optional[str] = Form(""),
+    file: Optional[UploadFile] = File(None),
+):
+    """
+    随手拍实物图多模态逆向建档接口。
+    支持 multipart/form-data 直传，或 JSON payload (通过 request.json() 解析已上传 asset)。
+    """
+    t0 = time.time()
+    raw_bytes: Optional[bytes] = None
+    final_asset_url = ""
+    target_sid = session_id
+    cat_hint = category_hint or ""
+
+    # 1. 判断是否为 application/json 传参
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        target_sid = body.get("session_id") or target_sid
+        asset_url = body.get("asset_url") or body.get("asset_path")
+        cat_hint = body.get("category_hint") or cat_hint
+
+    # 2. 获取图片实体 (二进制流或本地文件路径)
+    if file:
+        raw_bytes = await file.read()
+        filename = file.filename or f"snap_{int(time.time())}.jpg"
+        final_asset_url, abs_path = studio_service.save_upload_asset(target_sid, filename, raw_bytes)
+    elif asset_url:
+        final_asset_url = asset_url
+        abs_path = studio_service.resolve_asset_path(asset_url)
+        if not os.path.exists(abs_path):
+            raise HTTPException(status_code=400, detail=f"指定资产不存在: {asset_url}")
+        with open(abs_path, "rb") as f:
+            raw_bytes = f.read()
+    else:
+        raise HTTPException(status_code=400, detail="必须提供上传文件 (file) 或有效资产路径 (asset_url)")
+
+    # 3. 调度多模态逆向建档核心引擎
+    try:
+        extracted_dossier, provider_used = await studio_service.extract_dossier_from_image(
+            image_bytes=raw_bytes,
+            category_hint=cat_hint,
+            session_id=target_sid,
+        )
+    except Exception as e:
+        logger.error(f"多模态逆向提取异常: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"逆向建档失败: {str(e)}")
+
+    elapsed_ms = int((time.time() - t0) * 1000)
+    return VisionExtractDossierResponse(
+        success=True,
+        session_id=target_sid,
+        asset_url=final_asset_url,
+        dossier=extracted_dossier,
+        model_provider=provider_used,
+        execution_time_ms=elapsed_ms,
+    )
+
 
 @router.post("/sessions/{session_id}/assets/upload")
 async def upload_asset(
@@ -156,15 +235,16 @@ async def generate_plan(
     """
     req_t0 = time.time()
     target_sid = session_id or payload.session_id
+    target_style = getattr(payload, "style_preset", None) or "minimalist_muji"
     stream_requested = (
         payload.stream
         or "text/event-stream" in request.headers.get("accept", "")
     )
-    logger.info(f"📥 [Route /plan] sid={target_sid}, stream={stream_requested}, prod={payload.product_info.get('name')}")
+    logger.info(f"📥 [Route /plan] sid={target_sid}, stream={stream_requested}, style={target_style}, prod={payload.product_info.get('name')}")
 
     if stream_requested:
         return StreamingResponse(
-            studio_service.generate_plan_stream(target_sid, payload.product_info),
+            studio_service.generate_plan_stream(target_sid, payload.product_info, style_preset=target_style),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
@@ -173,7 +253,9 @@ async def generate_plan(
             },
         )
     else:
-        result = await asyncio.to_thread(studio_service.generate_plan_sync, target_sid, payload.product_info)
+        result = await asyncio.to_thread(
+            studio_service.generate_plan_sync, target_sid, payload.product_info, target_style
+        )
         elapsed = time.time() - req_t0
         logger.info(f"📤 [Route /plan Done] sid={target_sid}, elapsed={elapsed:.2f}s")
         return result
@@ -217,6 +299,38 @@ async def refine_prompt(
 
     try:
         return await asyncio.to_thread(studio_service.refine_prompt, target_sid, target_pid, instruction)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post(
+    "/sessions/{session_id}/perspectives/{perspective_id}/regenerate-script",
+    response_model=RegeneratePerspectiveScriptResponse,
+)
+@router.post(
+    "/regenerate-perspective-script",
+    response_model=RegeneratePerspectiveScriptResponse,
+)
+async def regenerate_perspective_script(
+    payload: RegeneratePerspectiveScriptRequest,
+    session_id: Optional[str] = None,
+    perspective_id: Optional[str] = None,
+):
+    """单视角 AI 商业视觉导演全自主重新构思与生成"""
+    target_sid = session_id or getattr(payload, "session_id", None)
+    target_pid = perspective_id or getattr(payload, "perspective_id", None)
+    instruction = getattr(payload, "instruction", "") or ""
+
+    if not target_sid or not target_pid:
+        raise HTTPException(status_code=400, detail="缺少 session_id 或 perspective_id")
+
+    try:
+        return await asyncio.to_thread(
+            studio_service.regenerate_perspective_script,
+            target_sid,
+            target_pid,
+            instruction,
+        )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 

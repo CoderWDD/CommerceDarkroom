@@ -1,31 +1,72 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: ["class"],
   content: [
     "./src/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {
       colors: {
-        background: "#09090b",
-        surface: "#18181b",
-        elevated: "#27272a",
-        border: "rgba(255, 255, 255, 0.08)",
-        ring: "rgba(56, 189, 248, 0.5)",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        surface: {
+          DEFAULT: "var(--surface)",
+          hover: "var(--surface-hover)",
+          active: "var(--surface-active)",
+        },
+        elevated: "var(--elevated)",
+        inset: "var(--inset)",
+        border: "var(--border)",
+        "border-subtle": "var(--border-subtle)",
+        "border-strong": "var(--border-strong)",
+        ring: "var(--ring)",
         studio: {
-          accent: "#0ea5e9",
-          copilot: "#6366f1",
-          success: "#10b981",
-          warning: "#f59e0b",
-          danger: "#f43f5e",
+          primary: {
+            DEFAULT: "var(--studio-primary)",
+            hover: "var(--studio-primary-hover)",
+            light: "var(--studio-primary-light)",
+          },
+          accent: {
+            DEFAULT: "var(--studio-accent)",
+            hover: "var(--studio-accent-hover)",
+            light: "var(--studio-accent-light)",
+          },
+          copilot: {
+            DEFAULT: "var(--studio-copilot)",
+            light: "var(--studio-copilot-light)",
+          },
+          success: {
+            DEFAULT: "var(--studio-success)",
+            bg: "var(--studio-success-bg)",
+          },
+          warning: {
+            DEFAULT: "var(--studio-warning)",
+            bg: "var(--studio-warning-bg)",
+          },
+          danger: {
+            DEFAULT: "var(--studio-danger)",
+            bg: "var(--studio-danger-bg)",
+          },
+        },
+        commerce: {
+          text: {
+            main: "var(--text-main)",
+            body: "var(--text-body)",
+            muted: "var(--text-muted)",
+            subtle: "var(--text-subtle)",
+          },
         },
       },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        "card-hover": "var(--shadow-card-hover)",
+        popover: "var(--shadow-popover)",
+      },
       animation: {
-        shimmer: "shimmer 2s infinite linear",
+        shimmer: "studio-shimmer-light 1.8s ease-in-out infinite",
       },
       keyframes: {
-        shimmer: {
+        "studio-shimmer-light": {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
         },
@@ -34,4 +75,5 @@ const config: Config = {
   },
   plugins: [require("tailwindcss-animate")],
 };
+
 export default config;

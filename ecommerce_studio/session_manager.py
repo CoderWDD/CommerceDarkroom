@@ -30,6 +30,7 @@ def create_session(
     name: str = "",
     product_info: Optional[Dict[str, str]] = None,
     metadata: Optional[Dict[str, Any]] = None,
+    style_preset: Optional[str] = "minimalist_muji",
 ) -> Dict[str, Any]:
     """
     创建一个新的电商策划会话
@@ -47,6 +48,7 @@ def create_session(
         "created_at": now,
         "updated_at": now,
         "product_info": product_info or {},
+        "style_preset": style_preset or "minimalist_muji",
         "analysis_result": "",
         "prompts_matrix": [],
         "generated_images": [],
@@ -124,6 +126,7 @@ def list_sessions() -> List[Dict[str, Any]]:
                     "created_at": data.get("created_at", 0),
                     "updated_at": data.get("updated_at", 0),
                     "product_name": data.get("product_info", {}).get("name", ""),
+                    "style_preset": data.get("style_preset", "minimalist_muji"),
                     "images_count": len(data.get("generated_images", [])),
                     "chat_count": len(data.get("chat_history", [])),
                     "path": str(item),
@@ -169,6 +172,7 @@ def migrate_session_to_v2(session_data: Dict[str, Any]) -> Dict[str, Any]:
         and all(isinstance(img, dict) and "versions" in img for img in gen_images)
     )
     if is_v2:
+        session_data.setdefault("style_preset", "minimalist_muji")
         return session_data
 
     migrated_images = []

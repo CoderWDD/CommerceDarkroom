@@ -33,17 +33,17 @@ export default function StudioPage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3 text-zinc-400">
-          <div className="h-6 w-6 rounded-full border-2 border-sky-500 border-t-transparent animate-spin" />
-          <span className="text-xs font-mono">正在加载商业暗房摄影工作台...</span>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-slate-500">
+          <div className="h-6 w-6 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
+          <span className="text-xs font-mono">正在加载电商商业摄影工作台...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col pb-24 relative overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground flex flex-col pb-24 relative overflow-x-hidden">
       {/* Top Bar with Brand & Session Switcher */}
       <StudioTopBar />
 

@@ -17,24 +17,24 @@ export const Step4Container: React.FC = () => {
       {/* Header & View Mode Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
             <span>Step 4: 全套物料交付与详情页长图工坊</span>
           </h2>
-          <p className="text-xs text-zinc-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             定稿全套高保真商业大片，在 750px 手机详情页中沉浸式核验视觉节奏与购买转化动线。
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           {/* Mode Switcher */}
-          <div className="inline-flex rounded-lg bg-zinc-900/80 p-0.5 border border-white/10 text-xs">
+          <div className="inline-flex rounded-lg bg-slate-100 p-0.5 border border-slate-200 text-xs">
             <button
               type="button"
               onClick={() => setViewMode('grid')}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all ${
                 viewMode === 'grid'
-                  ? 'bg-zinc-800 text-sky-400 font-medium'
-                  : 'text-zinc-400 hover:text-white'
+                  ? 'bg-white text-blue-700 font-medium shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <LayoutGrid className="h-3.5 w-3.5" />
@@ -45,8 +45,8 @@ export const Step4Container: React.FC = () => {
               onClick={() => setViewMode('canvas')}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all ${
                 viewMode === 'canvas'
-                  ? 'bg-zinc-800 text-sky-400 font-medium'
-                  : 'text-zinc-400 hover:text-white'
+                  ? 'bg-white text-blue-700 font-medium shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Smartphone className="h-3.5 w-3.5" />
@@ -58,7 +58,7 @@ export const Step4Container: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => setCurrentStep(3)}
-            className="text-xs"
+            className="text-xs text-slate-700 hover:text-slate-900 border-slate-200 bg-white"
           >
             <ArrowLeft className="h-3.5 w-3.5 mr-1" />
             返回工坊微调

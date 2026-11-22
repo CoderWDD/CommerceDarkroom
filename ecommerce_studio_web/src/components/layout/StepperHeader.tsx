@@ -16,7 +16,7 @@ export const StepperHeader: React.FC = () => {
   const { currentStep, setCurrentStep } = useStudioStore();
 
   return (
-    <nav className="w-full bg-zinc-950/60 border-b border-white/[0.06] py-2 px-4 flex items-center justify-center">
+    <nav className="w-full bg-white/80 backdrop-blur-md border-b border-slate-200/80 py-2 px-4 flex items-center justify-center">
       <ol className="flex items-center gap-1 sm:gap-4 md:gap-8 overflow-x-auto py-1 scrollbar-none">
         {STEPS.map((item, index) => {
           const isCompleted = item.step < currentStep;
@@ -28,8 +28,8 @@ export const StepperHeader: React.FC = () => {
               {index > 0 && (
                 <div
                   className={cn(
-                    'h-[1px] w-4 sm:w-8 md:w-12 transition-colors duration-300',
-                    item.step <= currentStep ? 'bg-sky-500/50' : 'bg-zinc-800'
+                    'h-[2px] w-4 sm:w-8 md:w-12 transition-colors duration-300',
+                    item.step <= currentStep ? 'bg-blue-600' : 'bg-slate-200'
                   )}
                 />
               )}
@@ -47,22 +47,22 @@ export const StepperHeader: React.FC = () => {
                   className={cn(
                     'group flex items-center gap-2 rounded-full px-2.5 py-1 text-xs transition-all select-none',
                     isActive &&
-                      'bg-sky-500/15 border border-sky-500/40 text-white shadow-sm shadow-sky-500/20 font-medium',
+                      'bg-blue-50 border border-blue-600 text-blue-700 shadow-xs font-semibold',
                     isCompleted &&
-                      'bg-zinc-900/80 border border-emerald-500/30 text-zinc-200 hover:border-emerald-500/60 cursor-pointer',
-                    isUpcoming && 'opacity-40 text-zinc-500 cursor-not-allowed border border-transparent'
+                      'bg-emerald-50 border border-emerald-300 text-emerald-800 hover:border-emerald-400 cursor-pointer',
+                    isUpcoming && 'opacity-40 text-slate-400 cursor-not-allowed border border-transparent'
                   )}
                 >
                   <span
                     className={cn(
                       'flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-mono transition-colors',
-                      isActive && 'bg-sky-500 text-zinc-950 font-bold',
-                      isCompleted && 'bg-emerald-500/20 text-emerald-400',
-                      isUpcoming && 'border border-zinc-700 text-zinc-600'
+                      isActive && 'bg-blue-600 text-white font-bold',
+                      isCompleted && 'bg-emerald-600 text-white',
+                      isUpcoming && 'border border-slate-300 text-slate-400'
                     )}
                   >
                     {isCompleted ? (
-                      <Check className="h-3 w-3" />
+                      <Check className="h-3 w-3 stroke-[2.5]" />
                     ) : isActive ? (
                       <Sparkles className="h-3 w-3" />
                     ) : (
@@ -70,7 +70,7 @@ export const StepperHeader: React.FC = () => {
                     )}
                   </span>
 
-                  <span className="truncate whitespace-nowrap">
+                  <span className="truncate whitespace-nowrap font-medium">
                     {item.label}
                   </span>
                 </button>

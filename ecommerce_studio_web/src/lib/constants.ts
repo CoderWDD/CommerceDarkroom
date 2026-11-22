@@ -1,4 +1,4 @@
-import { Perspective } from '@/types/session';
+import { Perspective, StylePreset } from '@/types/session';
 
 export const STANDARD_PERSPECTIVES_META: Array<Omit<Perspective, 'prompt_zh' | 'active_version_id' | 'versions'>> = [
   {
@@ -75,6 +75,79 @@ export const STANDARD_PERSPECTIVES_META: Array<Omit<Perspective, 'prompt_zh' | '
   },
 ];
 
+export const STYLE_PRESETS: StylePreset[] = [
+  {
+    id: 'minimalist_muji',
+    name: '极简原研哉 (日系留白)',
+    en_name: 'Minimalist Zen & MUJI Aesthetic',
+    badge: '日系留白',
+    tagline: '大面积纯净留白，晨光漫射，静谧自然克制',
+    description: '源自日本大师原研哉的空之美学(Emptiness)，去除一切冗余修饰，让商品本身成为空间的视觉重心。',
+    lighting: '大面积顶光漫反射，微暖柔光箱无刺眼高光，晨光穿透纱帘形成的微弱柔和漫射光，几乎无强烈死黑阴影',
+    environment: '浅色原木肌理展台、米白高品质微水泥墙面、日式和纸质感、极其克制的微量禅意留白空间',
+    camera: '50mm 标准商业静物中焦段，正面微俯角15度，f/8 中等景深确保商品细节全清晰，透视自然无畸变',
+    color_tone: '温暖燕麦色、纯净米白、浅卡其、浅原木色，低饱和度、高明度，呈现天然温润的自然质感',
+    anti_drift_rules: ['严禁浓艳色彩', '严禁复杂霓虹与暗黑背景', '严禁炫目反光与凌乱道具'],
+    accent_color: '#f59e0b',
+  },
+  {
+    id: 'nordic_luxury',
+    name: '北欧轻奢 (莫兰迪低饱和)',
+    en_name: 'Nordic Minimal Luxury',
+    badge: '莫兰迪轻奢',
+    tagline: '灰调高级质感，大理石与冷金点缀，中产格调溢价',
+    description: '斯堪的纳维亚现代家居与高端生活方式的结合，注重材质的高阶灰调与微量金属带来的轻奢冲击力。',
+    lighting: '侧逆45度自然窗光，伴随柔和丁达尔光束与双色温冷暖漫射，轮廓处有精致的高光细线',
+    environment: '卡拉拉白大理石台面、哑光黄铜细金属配件、低饱和度莫兰迪色系羊毛织物、几何水磨石',
+    camera: '85mm 商业人像与特写镜头，f/2.8 中浅景深，背景优雅散景虚化，焦内极致锐利',
+    color_tone: '莫兰迪灰调（灰绿/灰粉/燕麦灰）、高级冷灰、点缀10%以内的哑光香槟金或冷拉丝金属色',
+    anti_drift_rules: ['严禁暴发户式廉价大金大黄', '严禁粗糙塑料反光', '严禁刺眼霓虹光'],
+    accent_color: '#10b981',
+  },
+  {
+    id: 'german_deconstruct',
+    name: '德系解构 (严谨精工工业)',
+    en_name: 'Bauhaus & German Precision Engineering',
+    badge: '包豪斯精工',
+    tagline: '硬核机械美学，冷冽金属光泽，硬朗理性信任感',
+    description: '包豪斯现代主义与德国工业精密的极致融合，突出商品的精密机械装配、硬核功能与不可撼动的工业可靠度。',
+    lighting: '高反差硬朗侧逆光、数码级精准切割轮廓光、冷冽银白主光，硬核勾勒出几何边缘与锋利倒角',
+    environment: '阳极氧化深灰铝合金台面、炭黑工程塑料支架、精密毫米标尺、无尘实验室级别科技展台',
+    camera: '90mm 移轴微距摄影，全景深精细堆叠(Focus Stacking)，极致锐化边缘，无透视形变',
+    color_tone: '深空炭黑、冷钛灰、哑光银，极高反差，局部可带有0.5%科技幽蓝或指示冷白LED光效',
+    anti_drift_rules: ['严禁粉嫩色系', '严禁温馨家庭杂物', '严禁模糊朦胧镜头'],
+    accent_color: '#0ea5e9',
+  },
+  {
+    id: 'dopamine_energy',
+    name: '多巴胺活力 (青年明快撞色)',
+    en_name: 'Dopamine Bright & Pop Energy',
+    badge: 'Z世代高活',
+    tagline: '高饱和明快撞色，夏日阳光投影，激发冲动点击',
+    description: '拥抱Z世代年轻力与悦己情绪，通过鲜活高饱和的视觉冲击唤醒购买兴奋感，极大拉升CTR点击率。',
+    lighting: '模拟夏日正午清透直射阳光，带有清晰锐利的硬直投影，白色反光板高亮度立体补光',
+    environment: '纯色通透亚克力展台、波普艺术撞色背景板、水波纹光斑投影、明快极简几何方块堆叠',
+    camera: '35mm 人文广角与动感微俯视机位，充满活力的对角线构图，大景深明澈画质',
+    color_tone: '明亮柠檬黄、活力珊瑚橙、薄荷绿与克莱因蓝的大胆艺术碰撞，色彩通透浓郁，无压抑灰调',
+    anti_drift_rules: ['严禁昏暗暗调', '严禁死黑阴影', '严禁沉闷严肃的商务背景'],
+    accent_color: '#ec4899',
+  },
+  {
+    id: 'cyber_street',
+    name: '赛博潮酷 (暗夜霓虹潮流)',
+    en_name: 'Cyberpunk & Night Street Tech',
+    badge: '暗夜霓虹',
+    tagline: '暗夜深色基底，蓝紫电光流淌，未来主义科技潮牌',
+    description: '电影感赛博朋克与未来潮流街头的混合体，适合主打数码黑科技、电竞装备与先锋潮流的破圈单品。',
+    lighting: '双色冷暖高反差切光：45度电光青蓝主侧光 + 135度品红霓虹边缘轮廓反打，暗调深邃黑阶',
+    environment: '湿漉沥青反光地面、深黑碳纤维纹理板、全息渐变光晕、暗黑金属几何网格',
+    camera: '24mm 超广角低机位仰拍，大透视冲击力，配合暗部电影级细微胶片噪点与光晕漫射(Bloom)',
+    color_tone: '深邃极黑(#09090B)、电光青蓝(#00F0FF)、赛博品红(#FF003C)，高反差强视觉冲击',
+    anti_drift_rules: ['严禁田园乡村风', '严禁日式米白温馨感', '严禁大面积平庸白光'],
+    accent_color: '#8b5cf6',
+  },
+];
+
 export const DEMO_PRESETS = [
   {
     id: 'smart_cup',
@@ -132,5 +205,3 @@ export const formatAssetUrl = (url?: string | null): string => {
   }
   return url;
 };
-
-

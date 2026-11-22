@@ -64,32 +64,32 @@ export const CopilotDrawer: React.FC = () => {
     <Sheet open={isOpen} onOpenChange={setOpen}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-md p-0 flex flex-col justify-between bg-zinc-950/95 border-l border-white/10"
+        className="w-full sm:max-w-md p-0 flex flex-col justify-between bg-white border-l border-slate-200 text-slate-900 shadow-popover"
       >
         {/* Header */}
-        <div className="p-4 border-b border-white/10 space-y-2 bg-zinc-900/40">
+        <div className="p-4 border-b border-slate-100 space-y-2 bg-slate-50/50">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-sky-500 text-white shadow-sm shadow-indigo-500/20">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-blue-600 text-white shadow-xs">
               <Sparkles className="h-4 w-4" />
             </div>
             <div>
-              <SheetTitle className="text-sm font-semibold text-zinc-100">
+              <SheetTitle className="text-sm font-semibold text-slate-900">
                 首席视觉顾问 (Creative Copilot)
               </SheetTitle>
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-[11px] text-slate-500">
                 商业摄影棚光影布景顾问与消费心理学专家
               </p>
             </div>
           </div>
 
           {/* Context Badge */}
-          <div className="flex items-center gap-1.5 text-[11px] bg-zinc-950/60 p-2 rounded-lg border border-white/5">
-            <span className="text-zinc-500 font-medium">当前情境:</span>
-            <Badge variant="outline" className="text-[10px] py-0 px-1.5 text-sky-400 border-sky-500/30">
+          <div className="flex items-center gap-1.5 text-[11px] bg-white p-2 rounded-lg border border-slate-200 shadow-xs">
+            <span className="text-slate-500 font-medium">当前情境:</span>
+            <Badge variant="outline" className="text-[10px] py-0 px-1.5 text-blue-700 border-blue-200 bg-blue-50 font-medium">
               {stepLabels[currentStep] || `Step ${currentStep}`}
             </Badge>
             {activeP && (
-              <Badge variant="outline" className="text-[10px] py-0 px-1.5 text-indigo-300 border-indigo-500/30 truncate max-w-[150px]">
+              <Badge variant="outline" className="text-[10px] py-0 px-1.5 text-indigo-700 border-indigo-200 bg-indigo-50 truncate max-w-[150px] font-medium">
                 {activeP.name}
               </Badge>
             )}
@@ -106,7 +106,7 @@ export const CopilotDrawer: React.FC = () => {
                 className={`flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}
               >
                 {!isUser && (
-                  <div className="h-6 w-6 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 mt-0.5">
+                  <div className="h-6 w-6 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 shrink-0 mt-0.5">
                     <Bot className="h-3.5 w-3.5" />
                   </div>
                 )}
@@ -114,8 +114,8 @@ export const CopilotDrawer: React.FC = () => {
                 <div
                   className={`space-y-2 max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${
                     isUser
-                      ? 'bg-sky-600 text-white rounded-tr-sm'
-                      : 'bg-zinc-900/90 text-zinc-200 border border-white/10 rounded-tl-sm'
+                      ? 'bg-blue-600 text-white rounded-tr-sm shadow-xs'
+                      : 'bg-slate-50 text-slate-800 border border-slate-200 rounded-tl-sm shadow-xs'
                   }`}
                 >
                   <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -133,16 +133,16 @@ export const CopilotDrawer: React.FC = () => {
                             msg.id
                           )
                         }
-                        className="w-full justify-between gap-1.5 text-[11px] bg-indigo-500/10 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/20 hover:text-white"
+                        className="w-full justify-between gap-1.5 text-[11px] bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-900"
                       >
-                        <span className="truncate flex items-center gap-1">
-                          <Wand2 className="h-3 w-3 text-indigo-400" />
+                        <span className="truncate flex items-center gap-1 font-medium">
+                          <Wand2 className="h-3 w-3 text-indigo-600" />
                           <span>{msg.action_chip.label}</span>
                         </span>
                         {appliedId === msg.id ? (
-                          <Check className="h-3.5 w-3.5 text-emerald-400" />
+                          <Check className="h-3.5 w-3.5 text-emerald-600" />
                         ) : (
-                          <span className="text-[10px] text-zinc-400">一键注入</span>
+                          <span className="text-[10px] text-indigo-600 font-semibold">一键注入</span>
                         )}
                       </Button>
                     </div>
@@ -150,7 +150,7 @@ export const CopilotDrawer: React.FC = () => {
                 </div>
 
                 {isUser && (
-                  <div className="h-6 w-6 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-300 shrink-0 mt-0.5">
+                  <div className="h-6 w-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 shrink-0 mt-0.5">
                     <User className="h-3.5 w-3.5" />
                   </div>
                 )}
@@ -159,8 +159,8 @@ export const CopilotDrawer: React.FC = () => {
           })}
 
           {isThinking && (
-            <div className="flex gap-2.5 items-center text-xs text-zinc-400 bg-zinc-900/60 p-3 rounded-xl border border-white/5 w-fit">
-              <Wand2 className="h-3.5 w-3.5 animate-spin text-indigo-400" />
+            <div className="flex gap-2.5 items-center text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200 w-fit">
+              <Wand2 className="h-3.5 w-3.5 animate-spin text-indigo-600" />
               <span>顾问正在研判镜头调性与消费心理学...</span>
             </div>
           )}
@@ -169,14 +169,14 @@ export const CopilotDrawer: React.FC = () => {
         </div>
 
         {/* Quick Questions & Input Box */}
-        <div className="p-4 border-t border-white/10 space-y-3 bg-zinc-900/40">
+        <div className="p-4 border-t border-slate-100 space-y-3 bg-slate-50/50">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
             {QUICK_QUESTIONS.map((q, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => sendMessage(q)}
-                className="text-[11px] whitespace-nowrap px-2.5 py-1 rounded-full bg-zinc-800/80 border border-white/10 text-zinc-300 hover:text-sky-300 hover:border-sky-500/40 transition-colors shrink-0"
+                className="text-[11px] whitespace-nowrap px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-700 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 transition-colors shrink-0 shadow-xs"
               >
                 {q}
               </button>
@@ -188,7 +188,7 @@ export const CopilotDrawer: React.FC = () => {
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
               placeholder="向视觉顾问提问，或提出镜头光影微调要求..."
-              className="text-xs h-9 bg-zinc-950/80 border-white/10 focus:border-indigo-500/50"
+              className="text-xs h-9 bg-white border-slate-200 text-slate-900 focus:border-blue-500 shadow-xs"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();

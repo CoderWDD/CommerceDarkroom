@@ -19,17 +19,17 @@ export const MobileDetailPreviewSheet: React.FC = () => {
 
   return (
     <div className="flex flex-col xl:flex-row items-center xl:items-start justify-center gap-8 py-2">
-      {/* 750px Simulated iPhone Frame */}
-      <div className="relative w-full max-w-[420px] sm:max-w-[480px] md:max-w-[540px] rounded-[44px] p-3.5 bg-gradient-to-b from-zinc-700 via-zinc-800 to-zinc-900 shadow-2xl shadow-black/80 border border-white/10">
+      {/* 750px Simulated iPhone Frame (Modern Silver Studio Device) */}
+      <div className="relative w-full max-w-[420px] sm:max-w-[480px] md:max-w-[540px] rounded-[44px] p-3.5 bg-gradient-to-b from-slate-200 via-slate-100 to-slate-300 shadow-xl border border-slate-300">
         {/* Dynamic Island Decor */}
-        <div className="absolute top-5 left-1/2 -translate-x-1/2 h-5 w-24 rounded-full bg-black z-30 flex items-center justify-end px-2">
-          <div className="h-2 w-2 rounded-full bg-zinc-800" />
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 h-5 w-24 rounded-full bg-slate-800 z-30 flex items-center justify-end px-2">
+          <div className="h-2 w-2 rounded-full bg-slate-900" />
         </div>
 
         {/* Scrollable Screen Canvas */}
         <div
           ref={containerRef}
-          className="relative w-full h-[680px] rounded-[36px] overflow-y-auto bg-zinc-950 scrollbar-none border border-black/40 pt-8"
+          className="relative w-full h-[680px] rounded-[36px] overflow-y-auto bg-slate-50 scrollbar-none border border-slate-300 pt-8"
         >
           {/* Seamless Vertical Image Stack */}
           {perspectives.map((p, index) => {
@@ -48,7 +48,7 @@ export const MobileDetailPreviewSheet: React.FC = () => {
               <div
                 key={p.id}
                 id={`preview-slot-${p.id}`}
-                className="relative w-full border-b border-black/20 group"
+                className="relative w-full border-b border-slate-200 group bg-white"
               >
                 {imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -58,13 +58,13 @@ export const MobileDetailPreviewSheet: React.FC = () => {
                     className="w-full h-auto block select-none"
                   />
                 ) : (
-                  <div className="w-full aspect-square bg-zinc-900/80 flex items-center justify-center text-xs text-zinc-500">
+                  <div className="w-full aspect-square bg-slate-100 flex items-center justify-center text-xs text-slate-400">
                     {p.name} (待拍摄)
                   </div>
                 )}
 
                 {/* Floating Micro Badge on Card */}
-                <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[10px] text-zinc-300 font-mono opacity-80 group-hover:opacity-100 transition-opacity">
+                <div className="absolute bottom-2 left-2 bg-slate-900/70 backdrop-blur-md px-2 py-0.5 rounded text-[10px] text-white font-mono opacity-85 group-hover:opacity-100 transition-opacity shadow-xs">
                   0{index + 1} · {p.name}
                 </div>
               </div>
@@ -74,10 +74,10 @@ export const MobileDetailPreviewSheet: React.FC = () => {
       </div>
 
       {/* Side Outline Navigator */}
-      <div className="w-full xl:w-72 space-y-2 bg-zinc-900/60 backdrop-blur-md border border-white/[0.08] rounded-2xl p-4 shadow-xl">
-        <div className="flex items-center gap-2 pb-2 border-b border-white/5">
-          <Smartphone className="h-4 w-4 text-sky-400" />
-          <span className="text-xs font-semibold text-zinc-100">
+      <div className="w-full xl:w-72 space-y-2 bg-white border border-slate-200 rounded-2xl p-4 shadow-card">
+        <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+          <Smartphone className="h-4 w-4 text-blue-600" />
+          <span className="text-xs font-semibold text-slate-900">
             电商黄金买家动线导航
           </span>
         </div>
@@ -88,17 +88,17 @@ export const MobileDetailPreviewSheet: React.FC = () => {
               key={p.id}
               type="button"
               onClick={() => scrollToSlot(p.id)}
-              className="w-full text-left flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-all text-xs group"
+              className="w-full text-left flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-all text-xs group"
             >
               <div className="flex items-center gap-2 truncate pr-2">
-                <span className="font-mono text-[10px] text-zinc-500 group-hover:text-sky-400">
+                <span className="font-mono text-[10px] text-slate-400 group-hover:text-blue-600 font-semibold">
                   0{idx + 1}
                 </span>
-                <span className="text-zinc-300 group-hover:text-white truncate font-medium">
+                <span className="text-slate-700 group-hover:text-slate-900 truncate font-medium">
                   {p.name}
                 </span>
               </div>
-              <ChevronRight className="h-3.5 w-3.5 text-zinc-600 group-hover:text-zinc-300 shrink-0" />
+              <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-600 shrink-0" />
             </button>
           ))}
         </div>

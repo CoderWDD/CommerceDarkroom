@@ -14,10 +14,10 @@ export const Step3Container: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
             <span>Step 3: 商业大片出图工坊 (Master Studio Bench)</span>
           </h2>
-          <p className="text-xs text-zinc-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             一键批量并发渲染 9 大机位商业成图。支持单卡片无损版本微调（v1/v2/v3...）与双向后悔药瞬时回滚。
           </p>
         </div>
@@ -27,7 +27,7 @@ export const Step3Container: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => setCurrentStep(2)}
-            className="text-xs"
+            className="text-xs text-slate-700 hover:text-slate-900 border-slate-200"
           >
             <ArrowLeft className="h-3.5 w-3.5 mr-1" />
             返回矩阵策划

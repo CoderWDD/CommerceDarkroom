@@ -7,20 +7,20 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
 
 function Badge({ className, variant = "default", ...props }: BadgeProps) {
   const variantStyles = {
-    default: "border-transparent bg-zinc-800 text-zinc-200",
-    secondary: "border-transparent bg-zinc-800/80 text-zinc-300",
-    destructive: "border-rose-500/30 bg-rose-500/10 text-rose-400",
-    outline: "border-white/10 text-zinc-400",
-    success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
-    warning: "border-amber-500/30 bg-amber-500/10 text-amber-400",
-    copilot: "border-indigo-500/30 bg-indigo-500/10 text-indigo-300",
-    tag: "border-white/10 bg-zinc-900/80 text-zinc-300 hover:border-sky-500/40 hover:text-sky-300 cursor-pointer transition-colors",
+    default: "border border-slate-200 bg-slate-100 text-slate-700",
+    secondary: "border border-slate-200/80 bg-slate-50 text-slate-600",
+    destructive: "border border-red-200 bg-red-50 text-red-700 font-medium",
+    outline: "border border-slate-200 text-slate-500 bg-white",
+    success: "border border-emerald-200 bg-emerald-50 text-emerald-700 font-medium",
+    warning: "border border-amber-200 bg-amber-50 text-amber-700 font-medium",
+    copilot: "border border-indigo-200 bg-indigo-50 text-indigo-700 font-medium",
+    tag: "border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 text-slate-600 cursor-pointer transition-all",
   }[variant];
 
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-1 focus:ring-sky-500 select-none",
+        "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-1 focus:ring-blue-500 select-none",
         variantStyles,
         className
       )}

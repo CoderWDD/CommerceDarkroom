@@ -3,10 +3,14 @@ import {
   PlanMatrixRequest,
   RefinePromptRequest,
   RefinePromptResponse,
+  RegeneratePerspectiveScriptRequest,
+  RegeneratePerspectiveScriptResponse,
   RenderSlotRequest,
   RollbackRequest,
   RollbackResponse,
   CopilotChatRequest,
+  VisionExtractDossierResponse,
+  StylePreset,
 } from '@/types/api';
 import { StudioSession, SessionSummary, PerspectiveVersion } from '@/types/session';
 import { getApiBaseUrl } from '@/lib/constants';
@@ -73,7 +77,81 @@ export const studioApi = {
     return res.ok;
   },
 
-  // 2. Step 1: 资产上传与解析
+  // 2. 爆款流派获取
+  async getStylePresets(): Promise<StylePreset[]> {
+    try {
+      const res = await timedFetch(`${getBaseUrl()}/style-presets`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (e) {
+      console.warn('API getStylePresets failed, fallback to local constants', e);
+      const { STYLE_PRESETS } = await import('@/lib/constants');
+      return STYLE_PRESETS;
+    }
+  },
+
+  // 3. Step 1: 随手拍多模态逆向建档
+  async extractDossier(input: {
+    file?: File;
+    asset_url?: string;
+    session_id?: string;
+    category_hint?: string;
+  }): Promise<VisionExtractDossierResponse> {
+    const baseUrl = getBaseUrl();
+    if (input.file) {
+      const formData = new FormData();
+      formData.append('file', input.file);
+      if (input.session_id) formData.append('session_id', input.session_id);
+      if (input.category_hint) formData.append('category_hint', input.category_hint);
+
+      const res = await timedFetch(`${baseUrl}/vision/extract-dossier`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) {
+        let errMsg = `HTTP ${res.status}: 逆向建档多模态解析失败`;
+        try {
+          const errJson = await res.json();
+          if (errJson.detail) errMsg = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail);
+        } catch {}
+        throw new Error(errMsg);
+      }
+      return await res.json();
+    } else {
+      const res = await timedFetch(`${baseUrl}/vision/extract-dossier`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: input.session_id,
+          asset_url: input.asset_url,
+          category_hint: input.category_hint,
+        }),
+      });
+      if (!res.ok) {
+        let errMsg = `HTTP ${res.status}: 逆向建档多模态解析失败`;
+        try {
+          const errJson = await res.json();
+          if (errJson.detail) errMsg = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail);
+        } catch {}
+        throw new Error(errMsg);
+      }
+      return await res.json();
+    }
+  },
+
+  async extractDossierFromPhoto(
+    file: File,
+    hint?: string,
+    sessionId?: string
+  ): Promise<VisionExtractDossierResponse> {
+    return this.extractDossier({
+      file,
+      category_hint: hint,
+      session_id: sessionId,
+    });
+  },
+
+  // 4. Step 1: 资产上传与解析 (传统)
   async uploadAsset(sessionId: string, file: File, isPrimary: boolean = false): Promise<{
     id: string;
     url: string;
@@ -90,7 +168,7 @@ export const studioApi = {
     return await res.json();
   },
 
-  // 3. Step 1 -> Step 2: 9大商业矩阵推演
+  // 5. Step 1 -> Step 2: 9大商业矩阵推演
   async planMatrix(payload: PlanMatrixRequest): Promise<StudioSession> {
     const res = await timedFetch(`${getBaseUrl()}/plan`, {
       method: 'POST',
@@ -101,7 +179,11 @@ export const studioApi = {
     return await res.json();
   },
 
-  // 4. Step 2: 策划案灵感润色 (AI Magic Refiner)
+  async planSession(payload: PlanMatrixRequest): Promise<StudioSession> {
+    return this.planMatrix(payload);
+  },
+
+  // 6. Step 2: 策划案灵感润色 (AI Magic Refiner)
   async refinePrompt(payload: RefinePromptRequest): Promise<RefinePromptResponse> {
     const res = await timedFetch(`${getBaseUrl()}/refine-prompt`, {
       method: 'POST',
@@ -119,7 +201,32 @@ export const studioApi = {
     return await res.json();
   },
 
-  // 5. Step 3: 单镜头微调渲染 (产出新版本快照与完整同步会话)
+  // 6.1 Step 2: 单卡 AI 视觉导演全自主重新构思 (Reimagine Perspective)
+  async regeneratePerspectiveScript(
+    payload: RegeneratePerspectiveScriptRequest
+  ): Promise<RegeneratePerspectiveScriptResponse> {
+    const sid = payload.session_id;
+    const pid = payload.perspective_id;
+    const url = sid && pid
+      ? `${getBaseUrl()}/sessions/${sid}/perspectives/${pid}/regenerate-script`
+      : `${getBaseUrl()}/regenerate-perspective-script`;
+    const res = await timedFetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      let errMsg = `HTTP ${res.status}: Perspective script regeneration failed`;
+      try {
+        const errJson = await res.json();
+        if (errJson.detail) errMsg = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail);
+      } catch {}
+      throw new Error(errMsg);
+    }
+    return await res.json();
+  },
+
+  // 7. Step 3: 单镜头微调渲染 (产出新版本快照与完整同步会话)
   async renderSlot(payload: RenderSlotRequest): Promise<{
     success: boolean;
     perspective_id: string;
@@ -149,7 +256,7 @@ export const studioApi = {
     };
   },
 
-  // 6. Step 3: 版本回滚
+  // 8. Step 3: 版本回滚
   async rollbackVersion(payload: RollbackRequest): Promise<RollbackResponse> {
     const res = await timedFetch(`${getBaseUrl()}/rollback`, {
       method: 'POST',
@@ -167,7 +274,7 @@ export const studioApi = {
     return await res.json();
   },
 
-  // 7. 首席顾问对话
+  // 9. 首席顾问对话
   async copilotChat(payload: CopilotChatRequest): Promise<{
     reply: string;
     action_chip?: {
@@ -185,7 +292,7 @@ export const studioApi = {
     return await res.json();
   },
 
-  // 8. 交付下载链接
+  // 10. 交付下载链接
   getZipExportUrl(sessionId: string): string {
     return `${getBaseUrl()}/sessions/${sessionId}/export/zip`;
   },

@@ -6,6 +6,7 @@ import {
   PerspectiveVersion,
   ProductDossier,
   SessionSummary,
+  StylePresetId,
 } from '@/types/session';
 import { STANDARD_PERSPECTIVES_META } from '@/lib/constants';
 import { studioApi } from '@/lib/api-client';
@@ -41,6 +42,11 @@ interface StudioState {
   isLoading: boolean;
   error: string | null;
 
+  // v2.0 爆款流派与逆向建档状态
+  selectedStylePreset: StylePresetId | string;
+  isExtractingDossier: boolean;
+  extractionProgressText: string;
+
   // Actions
   setCurrentStep: (step: 1 | 2 | 3 | 4) => void;
   setActivePerspectiveId: (id: string | null) => void;
@@ -49,6 +55,12 @@ interface StudioState {
   setSession: (session: StudioSession) => void;
   updateProductInfo: (info: Partial<ProductDossier>) => void;
   updatePerspectivePrompt: (perspectiveId: string, promptZh: string) => void;
+  updatePerspectiveScript: (perspectiveId: string, scriptData: Partial<Perspective>) => void;
+
+  // v2.0 Actions
+  setStylePreset: (presetId: StylePresetId | string) => void;
+  extractDossierFromPhoto: (file: File, hint?: string) => Promise<void>;
+  extractDossierFromExistingAsset: (assetUrl: string, hint?: string) => Promise<void>;
 
   // Version Control Actions
   selectPreviewVersion: (perspectiveId: string, versionId: string) => void;
@@ -110,6 +122,11 @@ export const useStudioStore = create<StudioState>()(
       isLoading: false,
       error: null,
 
+      // v2.0 初始状态
+      selectedStylePreset: 'minimalist_muji',
+      isExtractingDossier: false,
+      extractionProgressText: '',
+
       setCurrentStep: (step) => set({ currentStep: step }),
 
       setActivePerspectiveId: (id) => set({ activePerspectiveId: id }),
@@ -117,6 +134,177 @@ export const useStudioStore = create<StudioState>()(
       setAspectRatio: (ratio) => set({ aspectRatio: ratio }),
 
       setConcurrency: () => set({ concurrency: 1 }),
+
+      setStylePreset: (presetId: StylePresetId | string) => {
+        set((state) => {
+          if (!state.currentSession) return { selectedStylePreset: presetId };
+          return {
+            selectedStylePreset: presetId,
+            currentSession: {
+              ...state.currentSession,
+              style_preset: presetId,
+              updated_at: Math.floor(Date.now() / 1000),
+            },
+          };
+        });
+      },
+
+      extractDossierFromPhoto: async (file: File, hint?: string) => {
+        let session = get().currentSession;
+        if (!session) {
+          get().initDefaultSession();
+          session = get().currentSession;
+        }
+        const sessionId = session?.session_id;
+
+        set({
+          isExtractingDossier: true,
+          extractionProgressText: '多模态大脑正在审视随手拍实物图...',
+          error: null,
+        });
+
+        const timer1 = setTimeout(() => {
+          if (get().isExtractingDossier) {
+            set({ extractionProgressText: '正在逆向分析工业材质特征与光学几何...' });
+          }
+        }, 1200);
+
+        const timer2 = setTimeout(() => {
+          if (get().isExtractingDossier) {
+            set({ extractionProgressText: '正在萃取客群决策抗拒点与视觉微标签...' });
+          }
+        }, 2600);
+
+        try {
+          const res = await studioApi.extractDossierFromPhoto(file, hint, sessionId);
+          clearTimeout(timer1);
+          clearTimeout(timer2);
+
+          const current = get().currentSession;
+          if (!current) return;
+
+          const updatedRefImages = [...(current.product_info.reference_images || [])];
+          const newRef = {
+            id: `snap_${Date.now()}`,
+            url: res.asset_url,
+            is_primary: true,
+            vision_tags: res.dossier.visual_tags?.length > 0 ? res.dossier.visual_tags : ['#随手拍逆向', '#实物材质'],
+          };
+          const finalRefImages = [
+            newRef,
+            ...updatedRefImages.map((img) => ({ ...img, is_primary: false })),
+          ];
+
+          const newDossier: ProductDossier = {
+            ...current.product_info,
+            name: res.dossier.product_name || current.product_info.name,
+            category: res.dossier.category || current.product_info.category,
+            material_features: res.dossier.material_features || current.product_info.material_features,
+            target_audience: res.dossier.target_users || current.product_info.target_audience,
+            pain_points: res.dossier.pain_points || current.product_info.pain_points,
+            reference_images: finalRefImages,
+            visual_tags: res.dossier.visual_tags || [],
+            color_palette: res.dossier.color_palette || [],
+          };
+
+          set({
+            isExtractingDossier: false,
+            extractionProgressText: '建档完成！已智能回填商品档案',
+            currentSession: {
+              ...current,
+              name: res.dossier.product_name ? `${res.dossier.product_name}商业视觉全案` : current.name,
+              product_info: newDossier,
+              updated_at: Math.floor(Date.now() / 1000),
+              // 上传新照片后，清理旧商品视角提示词与成图，准备全新推演
+              perspectives: current.perspectives.map((p) => ({
+                ...p,
+                prompt_zh: '',
+                image_path: null,
+                image_url: null,
+                active_version_id: null,
+                active_version: null,
+                versions: [],
+                render_status: 'idle',
+                render_progress: 0,
+              })),
+            },
+          });
+        } catch (err: unknown) {
+          clearTimeout(timer1);
+          clearTimeout(timer2);
+          const msg = err instanceof Error ? err.message : '多模态逆向建档失败';
+          set({
+            isExtractingDossier: false,
+            extractionProgressText: '',
+            error: msg,
+          });
+          throw err;
+        }
+      },
+
+      extractDossierFromExistingAsset: async (assetUrl: string, hint?: string) => {
+        const session = get().currentSession;
+        if (!session) return;
+
+        set({
+          isExtractingDossier: true,
+          extractionProgressText: '正在解析指定参考图...',
+          error: null,
+        });
+
+        try {
+          const res = await studioApi.extractDossier({
+            asset_url: assetUrl,
+            session_id: session.session_id,
+            category_hint: hint,
+          });
+
+          const current = get().currentSession;
+          if (!current) return;
+
+          const newDossier: ProductDossier = {
+            ...current.product_info,
+            name: res.dossier.product_name || current.product_info.name,
+            category: res.dossier.category || current.product_info.category,
+            material_features: res.dossier.material_features || current.product_info.material_features,
+            target_audience: res.dossier.target_users || current.product_info.target_audience,
+            pain_points: res.dossier.pain_points || current.product_info.pain_points,
+            visual_tags: res.dossier.visual_tags || [],
+            color_palette: res.dossier.color_palette || [],
+          };
+
+          set({
+            isExtractingDossier: false,
+            extractionProgressText: '建档成功',
+            currentSession: {
+              ...current,
+              name: res.dossier.product_name ? `${res.dossier.product_name}商业视觉全案` : current.name,
+              product_info: newDossier,
+              updated_at: Math.floor(Date.now() / 1000),
+              // 上传新照片后，清理旧商品视角提示词与成图，准备全新推演
+              perspectives: current.perspectives.map((p) => ({
+                ...p,
+                prompt_zh: '',
+                image_path: null,
+                image_url: null,
+                active_version_id: null,
+                active_version: null,
+                versions: [],
+                render_status: 'idle',
+                render_progress: 0,
+              })),
+            },
+          });
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : '参考图解析建档失败';
+          set({
+            isExtractingDossier: false,
+            extractionProgressText: '',
+            error: msg,
+          });
+          throw err;
+        }
+      },
 
       setSession: (session) => {
         // Ensure perspectives are aligned with standard meta
@@ -134,11 +322,15 @@ export const useStudioStore = create<StudioState>()(
           }
         });
 
+        const activePreset = (session.style_preset as StylePresetId) || get().selectedStylePreset || 'minimalist_muji';
+
         set({
           currentSession: {
             ...session,
+            style_preset: activePreset,
             perspectives,
           },
+          selectedStylePreset: activePreset,
           selectedPreviewVersions: selectedVersions,
         });
       },
@@ -146,14 +338,30 @@ export const useStudioStore = create<StudioState>()(
       updateProductInfo: (info) => {
         const { currentSession } = get();
         if (!currentSession) return;
+        const nameChanged = Boolean(info.name && info.name.trim() !== currentSession.product_info.name?.trim());
         set({
           currentSession: {
             ...currentSession,
+            name: nameChanged ? `${info.name}商业视觉全案` : currentSession.name,
             updated_at: Math.floor(Date.now() / 1000),
             product_info: {
               ...currentSession.product_info,
               ...info,
             },
+            // 若更换了商品名称，清理旧商品残留的历史成图与旧提示词，避免展示混乱
+            perspectives: nameChanged
+              ? currentSession.perspectives.map((p) => ({
+                  ...p,
+                  prompt_zh: '',
+                  image_path: null,
+                  image_url: null,
+                  active_version_id: null,
+                  active_version: null,
+                  versions: [],
+                  render_status: 'idle',
+                  render_progress: 0,
+                }))
+              : currentSession.perspectives,
           },
         });
       },
@@ -174,6 +382,45 @@ export const useStudioStore = create<StudioState>()(
             ...currentSession,
             updated_at: Math.floor(Date.now() / 1000),
             perspectives: updatedPerspectives,
+          },
+        });
+      },
+
+      updatePerspectiveScript: (perspectiveId, scriptData) => {
+        const { currentSession } = get();
+        if (!currentSession) return;
+
+        const updatedPerspectives = currentSession.perspectives.map((p) => {
+          if (matchPerspectiveId(p.id, perspectiveId)) {
+            return {
+              ...p,
+              ...scriptData,
+              prompt_zh: scriptData.prompt_zh !== undefined ? scriptData.prompt_zh : p.prompt_zh,
+            };
+          }
+          return p;
+        });
+
+        const updatedMatrix = currentSession.prompts_matrix?.map((item) => {
+          if (matchPerspectiveId(item.id, perspectiveId)) {
+            return {
+              ...item,
+              prompt: scriptData.prompt_zh !== undefined ? scriptData.prompt_zh : item.prompt,
+              scene_highlight: scriptData.scene_highlight || item.scene_highlight,
+              commercial_strategy: scriptData.commercial_strategy || item.commercial_strategy,
+              quick_tweaks: scriptData.quick_tweaks || item.quick_tweaks,
+              quick_tweak_pills: scriptData.quick_tweak_pills || item.quick_tweak_pills,
+            };
+          }
+          return item;
+        });
+
+        set({
+          currentSession: {
+            ...currentSession,
+            updated_at: Math.floor(Date.now() / 1000),
+            perspectives: updatedPerspectives,
+            prompts_matrix: updatedMatrix,
           },
         });
       },
@@ -363,8 +610,12 @@ export const useStudioStore = create<StudioState>()(
 
       createNewSession: async (name) => {
         const sessionName = name || `商业策划_${new Date().toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace('/', '')}`;
+        const activePreset = get().selectedStylePreset || 'minimalist_muji';
         try {
-          const session = await studioApi.createSession({ name: sessionName });
+          const session = await studioApi.createSession({
+            name: sessionName,
+            style_preset: activePreset,
+          });
           get().setSession(session);
           await get().fetchSessionList();
           return session.session_id;
@@ -377,6 +628,7 @@ export const useStudioStore = create<StudioState>()(
             name: sessionName,
             created_at: now,
             updated_at: now,
+            style_preset: activePreset,
             product_info: {
               name: '',
               category: '',
@@ -384,6 +636,8 @@ export const useStudioStore = create<StudioState>()(
               pain_points: '',
               material_features: '',
               reference_images: [],
+              visual_tags: [],
+              color_palette: [],
             },
             perspectives: createInitialPerspectives(),
             chat_history: [],
@@ -431,6 +685,7 @@ export const useStudioStore = create<StudioState>()(
           name: '智能数显保温杯商业视觉全案',
           created_at: now,
           updated_at: now,
+          style_preset: 'minimalist_muji',
           product_info: {
             name: '智能数显真空气密随行保温杯',
             category: '316L医用不锈钢 / 哑光亲肤磨砂黑 / 触控数显杯盖',
@@ -438,6 +693,8 @@ export const useStudioStore = create<StudioState>()(
             pain_points: '市面竞品保温时长短、放在背包里容易渗水、杯口易烫嘴、瓶身容易刮花掉漆',
             material_features: '316L医用级不锈钢内胆，外壁曜石黑亲肤喷砂烤漆，高精度LED数显触控屏',
             reference_images: [],
+            visual_tags: ['#316L医用钢', '#微米级哑光喷砂', '#触控LED冷光数显', '#纯净黑钛调'],
+            color_palette: ['#09090B 曜石黑', '#71717A 钛金灰', '#38BDF8 幽蓝冷光'],
           },
           strategy_summary: {
             tone: '现代极简冷峻精工，商务科技美学',
@@ -461,10 +718,25 @@ export const useStudioStore = create<StudioState>()(
     }),
     {
       name: 'ecommerce-studio-storage',
+      version: 2,
       storage: createJSONStorage(() => localStorage),
+      migrate: (persistedState: unknown, version: number) => {
+        const state = persistedState as {
+          currentSession?: StudioSession;
+          selectedStylePreset?: StylePresetId | string;
+        };
+        if (version < 2) {
+          if (state?.currentSession && !state.currentSession.style_preset) {
+            state.currentSession.style_preset = 'minimalist_muji';
+          }
+          state.selectedStylePreset = 'minimalist_muji';
+        }
+        return state as StudioState;
+      },
       partialize: (state) => ({
         currentSession: state.currentSession,
         currentStep: state.currentStep,
+        selectedStylePreset: state.selectedStylePreset,
         aspectRatio: state.aspectRatio,
         concurrency: state.concurrency,
         selectedPreviewVersions: state.selectedPreviewVersions,

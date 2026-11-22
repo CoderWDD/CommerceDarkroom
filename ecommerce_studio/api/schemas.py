@@ -11,7 +11,39 @@ class ProductDossier(BaseModel):
     target_users: Optional[str] = Field(default="", description="目标客群画像")
     target_audience: Optional[str] = Field(default="", description="兼容目标客群字段")
     pain_points: Optional[str] = Field(default="", description="竞品短板与买家核心抗拒点")
-    reference_images: Optional[List[str]] = Field(default_factory=list, description="实物参考图URL列表")
+    reference_images: Optional[List[Union[str, Dict[str, Any]]]] = Field(default_factory=list, description="实物参考图URL列表或对象列表")
+    visual_tags: Optional[List[str]] = Field(default_factory=list, description="逆向提取的视觉微标签")
+    color_palette: Optional[List[str]] = Field(default_factory=list, description="提取的主色调配色方案")
+
+
+class VisionExtractDossierRequest(BaseModel):
+    """JSON 模式入参定义"""
+    session_id: Optional[str] = Field(default=None, description="所属专案会话ID，若有则自动关联资产")
+    asset_url: Optional[str] = Field(default=None, description="已上传资产的相对或绝对URL路径，如 /output/uploads/xxx.jpg")
+    asset_path: Optional[str] = Field(default=None, description="后端文件物理绝对路径")
+    category_hint: Optional[str] = Field(default="", description="用户可选输入的品类提示（如'保温杯'），降低冷启动盲猜")
+
+
+class ProductDossierExtracted(BaseModel):
+    """多模态逆向萃取的商品商业档案核心数据"""
+    product_name: str = Field(..., description="逆向识别出的商品商业全称，如'智能触控数显真空气密随行保温杯'")
+    category: str = Field(..., description="精准品类属性，如'数码水具 / 户外便携保温杯'")
+    material_features: str = Field(..., description="工业材质与表面工艺特征，如'316L不锈钢内胆、外壁曜石黑微米级哑光喷砂烤漆、LED触控屏'")
+    target_users: str = Field(..., description="目标客群画像与典型生活方式，如'25-35岁高知通勤白领、商务差旅精英'")
+    pain_points: str = Field(..., description="买家核心抗拒点与竞品短板，如'传统杯倒置渗水、保温衰减快、杯口易烫嘴、外壳易刮花'")
+    visual_tags: List[str] = Field(default_factory=list, description="提取的视觉微标签，如 ['#曜石黑哑光', '#阳极氧化铝', '#数显杯盖']")
+    color_palette: List[str] = Field(default_factory=list, description="从实物提取的主色调Hex与名称，如 ['#09090B 曜石黑', '#71717A 钛金灰']")
+    confidence_score: float = Field(default=0.95, ge=0.0, le=1.0, description="多模态解析置信度")
+
+
+class VisionExtractDossierResponse(BaseModel):
+    """逆向建档统一响应模型"""
+    success: bool = Field(default=True, description="处理是否成功")
+    session_id: Optional[str] = Field(default=None, description="关联会话ID")
+    asset_url: str = Field(..., description="最终落盘资产访问URL")
+    dossier: ProductDossierExtracted = Field(..., description="逆向提炼得到的商品档案")
+    model_provider: str = Field(..., description="实际提供推理的多模态模型通道 (gemini / openai / rule_fallback)")
+    execution_time_ms: int = Field(..., description="耗时毫秒数")
 
 
 class StrategySummary(BaseModel):
@@ -50,6 +82,10 @@ class Perspective(BaseModel):
     render_status: Optional[str] = Field(default="idle", description="卡片状态: idle / rendering / pending / success / error")
     render_progress: Optional[int] = Field(default=0, description="卡片进度 0-100")
     versions: List[PerspectiveVersion] = Field(default_factory=list, description="历史版本快照链条")
+    scene_highlight: Optional[str] = Field(default=None, description="画面构想亮点")
+    commercial_strategy: Optional[str] = Field(default=None, description="商业攻坚策略")
+    quick_tweaks: Optional[List[Dict[str, Any]]] = Field(default=None, description="定制微调胶囊")
+    quick_tweak_pills: Optional[List[str]] = Field(default=None, description="微调胶囊标签列表")
     status: str = Field(default="idle", description="当前卡片状态: idle / rendering / success / error")
     error: Optional[str] = Field(default=None, description="渲染异常信息")
 
@@ -67,6 +103,7 @@ class StudioSession(BaseModel):
     created_at: int = Field(default_factory=lambda: int(time.time()))
     updated_at: int = Field(default_factory=lambda: int(time.time()))
     product_info: Dict[str, Any] = Field(default_factory=dict, description="商品档案")
+    style_preset: Optional[str] = Field(default="minimalist_muji", description="当前专案绑定的爆款风格流派")
     strategy_summary: Optional[StrategySummary] = Field(default=None, description="视觉总监策划全案摘要")
     perspectives: List[Perspective] = Field(default_factory=list, description="9大商业转化视角矩阵")
     prompts_matrix: Optional[List[Dict[str, Any]]] = Field(default_factory=list, description="兼容老矩阵结构")
@@ -81,6 +118,7 @@ class SessionSummary(BaseModel):
     created_at: int
     updated_at: int
     product_name: Optional[str] = ""
+    style_preset: Optional[str] = "minimalist_muji"
     image_count: int = 0
     images_count: int = 0
     chat_count: int = 0
@@ -91,11 +129,16 @@ class SessionSummary(BaseModel):
 class CreateSessionRequest(BaseModel):
     name: Optional[str] = Field(default="", description="专案名称")
     product_info: Optional[Dict[str, Any]] = Field(default_factory=dict, description="初始化商品信息")
+    style_preset: Optional[str] = Field(default="minimalist_muji", description="初始化爆款视觉流派")
 
 
 class PlanRequest(BaseModel):
     session_id: Optional[str] = Field(default=None, description="会话ID，若为空则自动创建")
     product_info: Dict[str, Any] = Field(..., description="商品商业档案信息")
+    style_preset: Optional[str] = Field(
+        default="minimalist_muji",
+        description="爆款视觉流派ID: minimalist_muji / nordic_luxury / german_deconstruct / dopamine_energy / cyber_street",
+    )
     stream: Optional[bool] = Field(default=False, description="是否以SSE方式流式推演")
 
 
@@ -108,6 +151,26 @@ class RefinePromptRequest(BaseModel):
     perspective_id: Optional[str] = Field(default=None, description="视角ID")
     instruction: Optional[str] = Field(default=None, description="微调润色意见")
     user_feedback: Optional[str] = Field(default=None, description="兼容参数名")
+    current_prompt: Optional[str] = Field(default=None, description="当前已有镜头指导词")
+
+
+class RegeneratePerspectiveScriptRequest(BaseModel):
+    session_id: Optional[str] = Field(default=None, description="会话ID")
+    perspective_id: str = Field(..., description="视角ID")
+    instruction: Optional[str] = Field(default="", description="用户针对该视角的重构与重绘指示")
+    current_prompt: Optional[str] = Field(default=None, description="当前已有镜头指导词")
+
+
+class RegeneratePerspectiveScriptResponse(BaseModel):
+    success: bool = True
+    session_id: Optional[str] = None
+    perspective_id: str
+    name: str
+    scene_highlight: str
+    commercial_strategy: str
+    prompt_zh: str
+    quick_tweaks: List[Dict[str, Any]] = Field(default_factory=list)
+    quick_tweak_pills: List[str] = Field(default_factory=list)
 
 
 class RefineSlotRequest(BaseModel):

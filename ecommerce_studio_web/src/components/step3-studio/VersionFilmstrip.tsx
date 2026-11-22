@@ -29,7 +29,7 @@ export const VersionFilmstrip: React.FC<VersionFilmstripProps> = ({
   // If no versions exist yet, show subtle empty indicator
   if (!versions || versions.length === 0) {
     return (
-      <div className="py-1 px-2 rounded bg-zinc-950/40 border border-white/5 text-[11px] text-zinc-500 text-center">
+      <div className="py-1 px-2 rounded bg-slate-50 border border-slate-200 text-[11px] text-slate-500 text-center">
         暂无版本快照，点击下方微调或一键出图生成
       </div>
     );
@@ -48,10 +48,10 @@ export const VersionFilmstrip: React.FC<VersionFilmstripProps> = ({
   };
 
   return (
-    <div className="space-y-2 pt-1 border-t border-white/5">
+    <div className="space-y-2 pt-1 border-t border-slate-100">
       {/* Horizontal Capsules Strip */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-        <span className="text-[10px] text-zinc-500 font-medium shrink-0">
+        <span className="text-[10px] text-slate-500 font-medium shrink-0">
           胶卷:
         </span>
         {versions.map((ver) => {
@@ -67,12 +67,12 @@ export const VersionFilmstrip: React.FC<VersionFilmstripProps> = ({
               onClick={() => onSelectVersion(ver.version_id)}
               className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono shrink-0 transition-all ${
                 isSelected
-                  ? 'bg-sky-500/20 border border-sky-400 text-sky-300 font-semibold shadow-sm'
-                  : 'bg-zinc-950/60 border border-white/10 text-zinc-400 hover:text-zinc-200 hover:border-white/20'
+                  ? 'bg-blue-50 border border-blue-400 text-blue-700 font-semibold shadow-xs'
+                  : 'bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               {isActive && (
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" title="当前定稿版本" />
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" title="当前定稿版本" />
               )}
               <span>
                 {label}
@@ -90,14 +90,14 @@ export const VersionFilmstrip: React.FC<VersionFilmstripProps> = ({
             variant="default"
             size="xs"
             onClick={() => onRollback(selectedVersionId)}
-            className="gap-1 text-[11px] bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-sm transition-all"
+            className="gap-1 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-xs transition-all"
           >
             <RotateCcw className="h-3 w-3" />
             <span>⏪ 回滚为此版本</span>
           </Button>
         ) : (
-          <div className="flex items-center gap-1 text-[11px] text-zinc-500 px-1">
-            <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+          <div className="flex items-center gap-1 text-[11px] text-slate-500 px-1">
+            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
             <span>已是现用版本</span>
           </div>
         )}
@@ -108,7 +108,7 @@ export const VersionFilmstrip: React.FC<VersionFilmstripProps> = ({
               variant="outline"
               size="xs"
               onClick={onOpenDiff}
-              className="text-[11px] gap-1 text-zinc-400 hover:text-zinc-200 h-6 px-1.5"
+              className="text-[11px] gap-1 text-slate-600 hover:text-slate-900 h-6 px-1.5 border-slate-200 bg-white"
               title="双版本对比"
             >
               <Columns className="h-3 w-3" />
@@ -121,7 +121,7 @@ export const VersionFilmstrip: React.FC<VersionFilmstripProps> = ({
               variant="ghost"
               size="xs"
               onClick={handleDownload}
-              className="text-[11px] gap-1 text-zinc-400 hover:text-zinc-200 h-6 px-1.5"
+              className="text-[11px] gap-1 text-slate-500 hover:text-slate-900 h-6 px-1.5"
               title="下载原图"
             >
               <Download className="h-3 w-3" />

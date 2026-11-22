@@ -39,28 +39,28 @@ const PROVIDERS_META: Array<{
     id: "gemini",
     name: "Google Gemini",
     desc: "原生多模态图文解析与 Imagen 3 工业生图",
-    icon: <Sparkles className="h-4 w-4 text-sky-400" />,
+    icon: <Sparkles className="h-4 w-4 text-blue-600" />,
     tag: "推荐首选",
   },
   {
     id: "openai",
     name: "OpenAI 官方",
     desc: "GPT-4o 深度策划与 DALL-E 3 视觉渲染",
-    icon: <Globe className="h-4 w-4 text-emerald-400" />,
+    icon: <Globe className="h-4 w-4 text-emerald-600" />,
     tag: "全球直连",
   },
   {
     id: "custom_openai",
     name: "兼容中继 / 代理",
     desc: "OneAPI / NewAPI / DeepSeek / 通义千问中转",
-    icon: <Zap className="h-4 w-4 text-amber-400" />,
+    icon: <Zap className="h-4 w-4 text-amber-600" />,
     tag: "国内加速",
   },
   {
     id: "ollama",
     name: "Ollama 本地私有",
     desc: "纯本地运行 Llama-3.2-Vision / Qwen2-VL",
-    icon: <Server className="h-4 w-4 text-purple-400" />,
+    icon: <Server className="h-4 w-4 text-purple-600" />,
     tag: "隐私安全",
   },
 ];
@@ -183,18 +183,18 @@ export const ModelSettingsDialog: React.FC = () => {
 
   return (
     <Dialog open={isSettingsOpen} onOpenChange={(open) => !open && closeSettings()}>
-      <DialogContent className="max-w-2xl bg-zinc-950 border border-white/10 text-zinc-100 p-6 shadow-2xl">
-        <DialogHeader className="pb-3 border-b border-white/10">
+      <DialogContent className="max-w-2xl bg-white border border-slate-200 text-slate-900 p-6 shadow-popover">
+        <DialogHeader className="pb-3 border-b border-slate-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-sky-400" />
+              <div className="h-8 w-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center">
+                <Sparkles className="h-4 w-4 text-blue-600" />
               </div>
               <div>
-                <DialogTitle className="text-base font-semibold tracking-tight text-zinc-100">
+                <DialogTitle className="text-base font-semibold tracking-tight text-slate-900">
                   AI 模型引擎与接入设置
                 </DialogTitle>
-                <DialogDescription className="text-xs text-zinc-400 mt-0.5">
+                <DialogDescription className="text-xs text-slate-500 mt-0.5">
                   配置用于商业图文解构、策划及渲染的多模态大模型底座与中继网关
                 </DialogDescription>
               </div>
@@ -203,7 +203,7 @@ export const ModelSettingsDialog: React.FC = () => {
               variant="ghost"
               size="sm"
               onClick={resetToDefaults}
-              className="h-7 text-[11px] text-zinc-400 hover:text-zinc-200 gap-1 px-2"
+              className="h-7 text-[11px] text-slate-500 hover:text-slate-800 gap-1 px-2"
               title="重置为系统出厂预设配置"
             >
               <RotateCcw className="h-3 w-3" />
@@ -214,7 +214,7 @@ export const ModelSettingsDialog: React.FC = () => {
 
         {/* 1. Provider 单选卡片网格 */}
         <div className="pt-3">
-          <Label className="text-xs font-medium text-zinc-300 mb-2 block">
+          <Label className="text-xs font-medium text-slate-700 mb-2 block">
             选择当前活跃模型提供商 (Active Provider)
           </Label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -227,18 +227,18 @@ export const ModelSettingsDialog: React.FC = () => {
                   onClick={() => setActiveTab(p.id)}
                   className={`flex flex-col items-start p-2.5 rounded-lg border text-left transition-all relative ${
                     isActive
-                      ? "border-sky-500/60 bg-sky-500/10 ring-1 ring-sky-500/30"
-                      : "border-white/5 bg-zinc-900/40 hover:bg-zinc-900/80 hover:border-white/10"
+                      ? "border-blue-600 bg-blue-50/80 ring-1 ring-blue-500/30"
+                      : "border-slate-200 bg-slate-50/50 hover:bg-slate-100 hover:border-slate-300"
                   }`}
                 >
                   <div className="flex items-center justify-between w-full mb-1">
-                    <span className="p-1 rounded bg-zinc-800/80">{p.icon}</span>
-                    <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 border-white/10 text-zinc-400">
+                    <span className="p-1 rounded bg-white border border-slate-200/80 shadow-xs">{p.icon}</span>
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 border-slate-200 bg-white text-slate-500">
                       {p.tag}
                     </Badge>
                   </div>
-                  <span className="text-xs font-semibold text-zinc-200">{p.name}</span>
-                  <span className="text-[10px] text-zinc-400 line-clamp-1 mt-0.5">{p.desc}</span>
+                  <span className="text-xs font-semibold text-slate-800">{p.name}</span>
+                  <span className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">{p.desc}</span>
                 </button>
               );
             })}
@@ -251,7 +251,7 @@ export const ModelSettingsDialog: React.FC = () => {
           {activeTab !== "gemini" && (
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-medium text-zinc-300">
+                <Label className="text-xs font-medium text-slate-700">
                   API 端点地址 (Base URL)
                 </Label>
                 <div className="flex items-center gap-1.5">
@@ -259,12 +259,12 @@ export const ModelSettingsDialog: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleAppendOllamaV1}
-                      className="text-[10px] text-amber-400 hover:text-amber-300 underline font-mono cursor-pointer"
+                      className="text-[10px] text-amber-600 hover:text-amber-700 underline font-mono cursor-pointer"
                     >
                       +添加 /v1 适配
                     </button>
                   )}
-                  <span className="text-[10px] text-zinc-400 font-mono">
+                  <span className="text-[10px] text-slate-500 font-mono">
                     {activeTab === "ollama" ? "例: http://localhost:11434/v1" : "支持 /v1 规范路径"}
                   </span>
                 </div>
@@ -274,7 +274,7 @@ export const ModelSettingsDialog: React.FC = () => {
                 onChange={(e) => handleFieldChange("base_url", e.target.value)}
                 onBlur={handleBaseUrlBlur}
                 placeholder={activeTab === "ollama" ? "http://localhost:11434/v1" : "https://api.your-proxy.com/v1"}
-                className="h-8 text-xs bg-zinc-900/60 border-white/10 font-mono focus:border-sky-500"
+                className="h-8 text-xs bg-white border-slate-200 font-mono text-slate-900 focus:border-blue-500"
               />
             </div>
           )}
@@ -282,12 +282,12 @@ export const ModelSettingsDialog: React.FC = () => {
           {/* API Key 输入与安全掩码 */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-medium text-zinc-300">
+              <Label className="text-xs font-medium text-slate-700">
                 {activeTab === "ollama" ? "API Key (Ollama 可留空)" : "API 访问密钥 (API Key)"}
               </Label>
               {currentForm.api_key && currentForm.api_key.includes("*") && (
-                <span className="text-[10px] text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" /> 系统已安全存储脱敏密钥（如不修改无需重输）
+                <span className="text-[10px] text-emerald-600 flex items-center gap-1 font-medium">
+                  <CheckCircle2 className="h-3 w-3 text-emerald-600" /> 系统已安全存储脱敏密钥（如不修改无需重输）
                 </span>
               )}
             </div>
@@ -297,12 +297,12 @@ export const ModelSettingsDialog: React.FC = () => {
                 value={currentForm.api_key || ""}
                 onChange={(e) => handleFieldChange("api_key", e.target.value)}
                 placeholder={currentForm.api_key ? "留空则保留原有已存密钥" : "请输入有效的 API Key..."}
-                className="h-8 pr-8 text-xs bg-zinc-900/60 border-white/10 font-mono focus:border-sky-500"
+                className="h-8 pr-8 text-xs bg-white border-slate-200 font-mono text-slate-900 focus:border-blue-500"
               />
               <button
                 type="button"
                 onClick={() => setShowKey(!showKey)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
                 {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
               </button>
@@ -313,7 +313,7 @@ export const ModelSettingsDialog: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             {/* 槽位 1: 多模态策划/思维大脑 */}
             <div className="space-y-1">
-              <Label className="text-xs font-medium text-zinc-300">
+              <Label className="text-xs font-medium text-slate-700">
                 推理与策划模型 (LLM Model)
               </Label>
               <div className="relative">
@@ -322,7 +322,7 @@ export const ModelSettingsDialog: React.FC = () => {
                   value={currentForm.model || ""}
                   onChange={(e) => handleFieldChange("model", e.target.value)}
                   placeholder="如: gpt-4o 或 deepseek-chat"
-                  className="h-8 text-xs bg-zinc-900/60 border-white/10 font-mono"
+                  className="h-8 text-xs bg-white border-slate-200 font-mono text-slate-900"
                 />
                 <datalist id={`models-${activeTab}`}>
                   {PRESET_MODELS[activeTab]?.text.map((m) => (
@@ -330,12 +330,12 @@ export const ModelSettingsDialog: React.FC = () => {
                   ))}
                 </datalist>
               </div>
-              <p className="text-[10px] text-zinc-400">支持自由输入任何模型标识</p>
+              <p className="text-[10px] text-slate-500">支持自由输入任何模型标识</p>
             </div>
 
             {/* 槽位 2: 商业生图模型 */}
             <div className="space-y-1">
-              <Label className="text-xs font-medium text-zinc-300">
+              <Label className="text-xs font-medium text-slate-700">
                 商业生图引擎 (Image Model)
               </Label>
               <div className="relative">
@@ -344,7 +344,7 @@ export const ModelSettingsDialog: React.FC = () => {
                   value={currentForm.image_model || ""}
                   onChange={(e) => handleFieldChange("image_model", e.target.value)}
                   placeholder="如: dall-e-3 / imagen-3.0"
-                  className="h-8 text-xs bg-zinc-900/60 border-white/10 font-mono"
+                  className="h-8 text-xs bg-white border-slate-200 font-mono text-slate-900"
                 />
                 <datalist id={`image-models-${activeTab}`}>
                   {PRESET_MODELS[activeTab]?.image.map((m) => (
@@ -352,7 +352,7 @@ export const ModelSettingsDialog: React.FC = () => {
                   ))}
                 </datalist>
               </div>
-              <p className="text-[10px] text-zinc-400">用于渲染商品 3x3 高清主图</p>
+              <p className="text-[10px] text-slate-500">用于渲染商品 3x3 高清主图</p>
             </div>
           </div>
 
@@ -361,16 +361,16 @@ export const ModelSettingsDialog: React.FC = () => {
             <div
               className={`p-2.5 rounded-lg border text-xs transition-all ${
                 testResult.success
-                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                  : "bg-rose-500/10 border-rose-500/30 text-rose-300"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  : "bg-red-50 border-red-200 text-red-800"
               }`}
             >
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-1.5 font-medium">
                   {testResult.success ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                   ) : (
-                    <XCircle className="h-4 w-4 text-rose-400 shrink-0" />
+                    <XCircle className="h-4 w-4 text-red-600 shrink-0" />
                   )}
                   <span>{testResult.message}</span>
                 </div>
@@ -379,7 +379,7 @@ export const ModelSettingsDialog: React.FC = () => {
                 </Badge>
               </div>
               {testResult.details?.raw_error && (
-                <p className="text-[11px] text-rose-400 font-mono mt-1 opacity-90 break-all">
+                <p className="text-[11px] text-red-600 font-mono mt-1 opacity-90 break-all">
                   错误日志: {testResult.details.raw_error}
                 </p>
               )}
@@ -387,14 +387,14 @@ export const ModelSettingsDialog: React.FC = () => {
           )}
         </div>
 
-        <DialogFooter className="pt-4 border-t border-white/10 flex items-center justify-between sm:justify-between">
+        <DialogFooter className="pt-4 border-t border-slate-200 flex items-center justify-between sm:justify-between">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={handleRunTest}
             disabled={isTesting}
-            className="h-8 gap-1.5 text-xs border-sky-500/30 text-sky-400 hover:bg-sky-500/10"
+            className="h-8 gap-1.5 text-xs border-blue-200 text-blue-600 hover:bg-blue-50"
           >
             {isTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
             {isTesting ? "正在探测端点..." : "测试连通性"}
@@ -406,7 +406,7 @@ export const ModelSettingsDialog: React.FC = () => {
               variant="ghost"
               size="sm"
               onClick={closeSettings}
-              className="h-8 text-xs text-zinc-400 hover:text-zinc-200"
+              className="h-8 text-xs text-slate-500 hover:text-slate-800"
             >
               取消
             </Button>
@@ -416,7 +416,7 @@ export const ModelSettingsDialog: React.FC = () => {
               size="sm"
               onClick={handleSave}
               disabled={isSaving}
-              className="h-8 text-xs bg-gradient-to-r from-sky-500 to-indigo-600 text-white hover:from-sky-400 hover:to-indigo-500"
+              className="h-8 text-xs"
             >
               {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
               保存并应用

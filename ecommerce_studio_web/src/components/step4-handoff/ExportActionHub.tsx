@@ -43,14 +43,14 @@ export const ExportActionHub: React.FC = () => {
   return (
     <div
       id="export-actions-hub"
-      className="bg-zinc-900/60 backdrop-blur-md border border-white/[0.08] rounded-2xl p-6 shadow-2xl flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+      className="bg-white border border-slate-200 rounded-2xl p-6 shadow-card flex flex-col md:flex-row md:items-center md:justify-between gap-4"
     >
       <div className="space-y-1">
-        <h3 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
-          <Package className="h-4 w-4 text-sky-400" />
+        <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+          <Package className="h-4 w-4 text-blue-600" />
           全套物料交付枢纽 (Master Handoff Actions)
         </h3>
-        <p className="text-xs text-zinc-400">
+        <p className="text-xs text-slate-500">
           导出符合电商工业标准的规范文件命名 ZIP 压缩包与 Markdown 策划全案，方便设计与运营团队归档落地。
         </p>
       </div>
@@ -60,11 +60,11 @@ export const ExportActionHub: React.FC = () => {
           variant="outline"
           size="sm"
           onClick={handleCopyPrompts}
-          className="gap-1.5 text-xs text-zinc-300 hover:text-white"
+          className="gap-1.5 text-xs text-slate-700 hover:text-slate-900 border-slate-200 bg-white hover:bg-slate-50"
         >
           {copiedPrompts ? (
             <>
-              <Check className="h-3.5 w-3.5 text-emerald-400" />
+              <Check className="h-3.5 w-3.5 text-emerald-600" />
               <span>已复制提示词</span>
             </>
           ) : (
@@ -79,9 +79,9 @@ export const ExportActionHub: React.FC = () => {
           variant="outline"
           size="sm"
           onClick={handleDownloadMarkdown}
-          className="gap-1.5 text-xs text-zinc-300 hover:text-white"
+          className="gap-1.5 text-xs text-slate-700 hover:text-slate-900 border-slate-200 bg-white hover:bg-slate-50"
         >
-          <FileText className="h-3.5 w-3.5 text-sky-400" />
+          <FileText className="h-3.5 w-3.5 text-blue-600" />
           <span>导出 Markdown 策划全案</span>
         </Button>
 
@@ -89,7 +89,7 @@ export const ExportActionHub: React.FC = () => {
           variant="studio-accent"
           size="sm"
           onClick={handleDownloadZip}
-          className="gap-1.5 text-xs font-semibold px-4 h-9 shadow-md shadow-sky-500/20"
+          className="gap-1.5 text-xs font-semibold px-4 h-9 shadow-md shadow-amber-500/20"
         >
           <Download className="h-4 w-4" />
           <span>一键打包全部大图 (ZIP) 📦</span>

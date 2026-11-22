@@ -173,6 +173,7 @@ def normalize_session_data(session_data: Dict[str, Any]) -> Dict[str, Any]:
 
     # 1. 迁移老结构
     session_data = session_manager.migrate_session_to_v2(session_data)
+    session_data["style_preset"] = session_data.get("style_preset") or "minimalist_muji"
     product_info = session_data.get("product_info") or {}
 
     # 兼容字段
@@ -279,6 +280,17 @@ def normalize_session_data(session_data: Dict[str, Any]) -> Dict[str, Any]:
             active_img_url = normalized_versions[-1].get("image_url")
             active_img_path = normalized_versions[-1].get("image_path")
 
+        matched_matrix: Dict[str, Any] = {}
+        for pm in prompts_matrix:
+            if isinstance(pm, dict) and canonicalize_perspective_id(pm.get("id", "")) in (p_canon_id, p_alt_id):
+                matched_matrix = pm
+                break
+
+        scene_hl = matched_matrix.get("scene_highlight") or matched_img.get("scene_highlight")
+        comm_strat = matched_matrix.get("commercial_strategy") or matched_img.get("commercial_strategy")
+        qt = matched_matrix.get("quick_tweaks") or matched_img.get("quick_tweaks")
+        qtp = matched_matrix.get("quick_tweak_pills") or matched_img.get("quick_tweak_pills")
+
         perspectives.append({
             "id": p_canon_id,
             "alt_id": p_alt_id,
@@ -293,6 +305,10 @@ def normalize_session_data(session_data: Dict[str, Any]) -> Dict[str, Any]:
             "render_status": card_status,
             "render_progress": 100 if card_status == "success" else 0,
             "versions": normalized_versions,
+            "scene_highlight": scene_hl,
+            "commercial_strategy": comm_strat,
+            "quick_tweaks": qt,
+            "quick_tweak_pills": qtp,
             "status": card_status,
             "error": matched_img.get("error"),
         })
@@ -507,15 +523,70 @@ class StudioBackendService:
                 "created_at": s.get("created_at"),
                 "updated_at": s.get("updated_at"),
                 "product_name": s.get("product_name", ""),
+                "style_preset": s.get("style_preset", "minimalist_muji"),
                 "image_count": s.get("images_count", 0),
                 "images_count": s.get("images_count", 0),
                 "chat_count": s.get("chat_count", 0),
             })
         return summaries
 
-    def create_session(self, name: str = "", product_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        data = session_manager.create_session(name=name, product_info=product_info or {})
+    def create_session(
+        self,
+        name: str = "",
+        product_info: Optional[Dict[str, Any]] = None,
+        style_preset: Optional[str] = "minimalist_muji",
+    ) -> Dict[str, Any]:
+        data = session_manager.create_session(
+            name=name, product_info=product_info or {}, style_preset=style_preset or "minimalist_muji"
+        )
         return normalize_session_data(data)
+
+    def save_upload_asset(self, session_id: Optional[str], filename: str, file_bytes: bytes) -> Tuple[str, str]:
+        """保存上传的资产文件，返回 (rel_url, abs_path)"""
+        target_sid = session_id or "common"
+        base_dir = Path(__file__).resolve().parent.parent
+        upload_dir = base_dir / "output" / "uploads" / target_sid
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        safe_name = "".join(c for c in filename if c.isalnum() or c in (".", "-", "_"))
+        if not safe_name:
+            safe_name = f"snap_{int(time.time())}.jpg"
+        dest_path = upload_dir / safe_name
+
+        with open(dest_path, "wb") as f:
+            f.write(file_bytes)
+
+        rel_url = f"/output/uploads/{target_sid}/{safe_name}"
+        return rel_url, str(dest_path)
+
+    def resolve_asset_path(self, asset_url: str) -> str:
+        """解析资产 URL 为本地物理绝对路径"""
+        if not asset_url:
+            return ""
+        if os.path.isabs(asset_url) and os.path.exists(asset_url):
+            return asset_url
+
+        base_dir = Path(__file__).resolve().parent.parent
+        clean_url = asset_url.lstrip("/")
+        if clean_url.startswith("output/"):
+            abs_path = base_dir / clean_url
+        else:
+            abs_path = base_dir / "output" / clean_url
+        return str(abs_path)
+
+    async def extract_dossier_from_image(
+        self,
+        image_bytes: bytes,
+        category_hint: Optional[str] = "",
+        session_id: Optional[str] = None,
+        filename: Optional[str] = None,
+    ) -> Tuple[Any, str]:
+        """随手拍多模态逆向萃取商品商业档案 (多模型容错与规则熔断兜底)"""
+        from ecommerce_studio.vision_adapter import MultiModalVisionAdapter
+        config = self.get_config()
+        adapter = MultiModalVisionAdapter(config)
+        dossier, provider = await adapter.extract_dossier(image_bytes, category_hint=category_hint)
+        return dossier, provider
 
     def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
         data = session_manager.get_session(session_id)
@@ -540,6 +611,7 @@ class StudioBackendService:
                     "pain_points": "市面竞品保温时长短、放在背包里容易渗水、杯口易烫嘴、瓶身容易刮花掉漆",
                     "material_features": "316L医用级不锈钢内胆，外壁曜石黑亲肤喷砂烤漆，高精度LED数显触控屏",
                 },
+                style_preset="minimalist_muji",
             )
             if not data.get("prompts_matrix"):
                 data["prompts_matrix"] = build_default_prompt_matrix(data.get("product_info", {}))
@@ -580,36 +652,64 @@ class StudioBackendService:
         session_manager.save_session(data)
         return {"success": True, "perspective_id": canon_id, "prompt_zh": new_prompt}
 
-    def generate_plan_sync(self, session_id: Optional[str], product_info: Dict[str, Any]) -> Dict[str, Any]:
+    def generate_plan_sync(
+        self,
+        session_id: Optional[str],
+        product_info: Dict[str, Any],
+        style_preset: Optional[str] = "minimalist_muji",
+    ) -> Dict[str, Any]:
         t0 = time.time()
         prod_name = product_info.get("name") or product_info.get("product_name") or "未命名商品"
-        logger.info(f"📋 [Generate Plan Start] session={session_id}, product='{prod_name}'")
+        logger.info(f"📋 [Generate Plan Start] session={session_id}, product='{prod_name}', style={style_preset}")
         config = self.get_config()
         if session_id:
             session_data = session_manager.get_session(session_id)
             if not session_data:
-                session_data = session_manager.create_session(session_id=session_id, product_info=product_info)
+                session_data = session_manager.create_session(
+                    session_id=session_id, product_info=product_info, style_preset=style_preset
+                )
         else:
-            session_data = session_manager.create_session(product_info=product_info)
+            session_data = session_manager.create_session(product_info=product_info, style_preset=style_preset)
             session_id = session_data["session_id"]
 
+        old_prod_name = (session_data.get("product_info") or {}).get("name")
+        new_prod_name = product_info.get("name") or product_info.get("product_name")
+        # 若更换了商品名称，清理旧商品的历史生成图片快照，防止旧商品图片或提示词残留
+        if old_prod_name and new_prod_name and old_prod_name.strip() != new_prod_name.strip():
+            session_data["generated_images"] = []
+
+        target_style = style_preset or session_data.get("style_preset", "minimalist_muji")
+        session_data["style_preset"] = target_style
         session_data["product_info"] = product_info
 
-        # 尝试调用多智能体全案推演
+        # 直接调用 AI 商业视觉导演全自主深度推理引擎
         try:
-            plan_text, matrix = studio_crew.run_phase_one(
+            logger.info(f"🧠 [AI Vision Director Start] product='{prod_name}', style={target_style}")
+            matrix = studio_crew.generate_vision_matrix_with_ai(
                 product_info=product_info,
-                pil_images=[],
+                style_preset_id=target_style,
                 config=config,
             )
-            session_data["analysis_result"] = plan_text
+            session_data["analysis_result"] = f"AI 商业视觉导演已针对《{prod_name}》深度推演 9 大黄金商业视角提示词与全案策略。"
             session_data["prompts_matrix"] = matrix
         except Exception as e:
-            # 优雅兜底方案
-            logger.warn(f"⚠️ [Generate Plan Warning] 多智能体推演降级，使用模板矩阵兜底: {e}")
-            matrix = studio_crew.build_default_prompt_matrix(product_info)
+            # 优雅兜底方案：调用 AI 视觉导演全自主编译兜底
+            logger.warning(f"⚠️ [Generate Plan Warning] 大模型推演降级，使用模板矩阵兜底: {e}")
+            matrix = studio_crew.generate_vision_matrix_with_ai(
+                product_info=product_info,
+                style_preset_id=target_style,
+                config=config,
+                force_fallback=True,
+            )
             session_data["prompts_matrix"] = matrix
-            session_data["analysis_result"] = f"推演已就绪（模板引擎兜底）。产品画像：{product_info.get('name', '商品')}"
+            session_data["analysis_result"] = f"推演已就绪（规则引擎兜底）。产品画像：{product_info.get('name', '商品')}"
+
+        # 同步更新已存在 generated_images 中的 prompt 为最新推演矩阵提示词
+        for item in matrix:
+            c_id = canonicalize_perspective_id(item.get("id", ""))
+            for g in session_data.get("generated_images", []):
+                if canonicalize_perspective_id(g.get("id", "")) == c_id:
+                    g["prompt"] = item.get("prompt", "")
 
         session_manager.save_session(session_data)
         elapsed = time.time() - t0
@@ -617,7 +717,10 @@ class StudioBackendService:
         return normalize_session_data(session_data)
 
     async def generate_plan_stream(
-        self, session_id: Optional[str], product_info: Dict[str, Any]
+        self,
+        session_id: Optional[str],
+        product_info: Dict[str, Any],
+        style_preset: Optional[str] = "minimalist_muji",
     ) -> AsyncGenerator[str, None]:
         """SSE 流式推演 Step 1 & Step 2 全案"""
         yield f"event: progress\ndata: {json.dumps({'stage': 'init', 'percent': 10, 'message': '正在读取商品资产与客群画像...'}, ensure_ascii=False)}\n\n"
@@ -630,7 +733,7 @@ class StudioBackendService:
 
         loop = asyncio.get_event_loop()
         normalized_data = await loop.run_in_executor(
-            self._executor, self.generate_plan_sync, session_id, product_info
+            self._executor, self.generate_plan_sync, session_id, product_info, style_preset
         )
 
         yield f"event: progress\ndata: {json.dumps({'stage': 'scripting', 'percent': 90, 'message': 'AI 制图工程师已完成 9 大商业摄影镜头脚本编译...'}, ensure_ascii=False)}\n\n"
@@ -645,6 +748,8 @@ class StudioBackendService:
         t0 = time.time()
         data = session_manager.get_session(session_id)
         if not data:
+            if not auto_create:
+                raise ValueError(f"会话 {session_id} 不存在")
             logger.info(f"🔄 [Single Render Self-Healing] 会话 {session_id} 尚未落盘，自动自愈创建...")
             data = self._get_or_create_session(session_id)
 
@@ -689,7 +794,83 @@ class StudioBackendService:
         self.update_prompt(session_id, canon_id, refined)
         elapsed = time.time() - t0
         logger.info(f"✨ [Refine Prompt Done] session={session_id}, perspective={canon_id}, elapsed={elapsed:.2f}s")
-        return {"success": True, "perspective_id": canon_id, "refined_prompt": refined}
+        return {"success": True, "perspective_id": canon_id, "refined_prompt": refined, "prompt_zh": refined}
+
+    def regenerate_perspective_script(
+        self,
+        session_id: str,
+        perspective_id: str,
+        instruction: str = "",
+        auto_create: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        AI 视觉导演全自主单卡重新构思：
+        根据用户输入的指示或灵感换一换，针对单个视角全自主重新推导提示词、画面构想、转化策略与微调胶囊。
+        """
+        t0 = time.time()
+        data = session_manager.get_session(session_id)
+        if not data:
+            if not auto_create:
+                raise ValueError(f"会话 {session_id} 不存在")
+            data = self._get_or_create_session(session_id)
+
+        config = self.get_config()
+        canon_id = canonicalize_perspective_id(perspective_id)
+        product_info = data.get("product_info") or {}
+        style_preset_id = data.get("style_preset", "minimalist_muji")
+
+        # 获取已有提示词
+        curr_prompt = ""
+        for item in data.get("prompts_matrix", []):
+            if canonicalize_perspective_id(item.get("id", "")) == canon_id:
+                curr_prompt = item.get("prompt", "")
+                break
+
+        res = studio_crew.regenerate_single_perspective_with_ai(
+            product_info=product_info,
+            perspective_id=canon_id,
+            style_preset_id=style_preset_id,
+            instruction=instruction,
+            current_prompt=curr_prompt,
+            config=config,
+        )
+
+        # 更新回 session.prompts_matrix
+        updated = False
+        for item in data.setdefault("prompts_matrix", []):
+            if canonicalize_perspective_id(item.get("id", "")) == canon_id:
+                item["prompt"] = res["prompt"]
+                item["prompt_zh"] = res["prompt_zh"]
+                item["scene_highlight"] = res["scene_highlight"]
+                item["commercial_strategy"] = res["commercial_strategy"]
+                item["quick_tweaks"] = res["quick_tweaks"]
+                item["quick_tweak_pills"] = res["quick_tweak_pills"]
+                updated = True
+                break
+
+        if not updated:
+            data["prompts_matrix"].append(res)
+
+        # 同步更新 generated_images
+        for g in data.setdefault("generated_images", []):
+            if canonicalize_perspective_id(g.get("id", "")) == canon_id:
+                g["prompt"] = res["prompt"]
+
+        session_manager.save_session(data)
+        elapsed = time.time() - t0
+        logger.info(f"✨ [Regenerate Perspective Script Done] session={session_id}, perspective={canon_id}, elapsed={elapsed:.2f}s")
+
+        return {
+            "success": True,
+            "session_id": session_id,
+            "perspective_id": canon_id,
+            "name": res["name"],
+            "scene_highlight": res["scene_highlight"],
+            "commercial_strategy": res["commercial_strategy"],
+            "prompt_zh": res["prompt_zh"],
+            "quick_tweaks": res["quick_tweaks"],
+            "quick_tweak_pills": res["quick_tweak_pills"],
+        }
 
     def render_single_version_sync(
         self,
@@ -707,6 +888,8 @@ class StudioBackendService:
         t0 = time.time()
         data = session_manager.get_session(session_id)
         if not data:
+            if not auto_create:
+                raise ValueError(f"会话 {session_id} 不存在")
             logger.info(f"🔄 [Single Render Self-Healing] 会话 {session_id} 尚未落盘，自动自愈创建...")
             data = self._get_or_create_session(session_id)
 
@@ -761,6 +944,11 @@ class StudioBackendService:
             aspect_ratio=aspect_ratio,
         )
 
+        # 同时同步更新 prompts_matrix 中该视角的提示词，确保前后端数据一致
+        for item in data.get("prompts_matrix", []):
+            if canonicalize_perspective_id(item.get("id", "")) == canon_id:
+                item["prompt"] = target_prompt
+
         # 返回最新 normalized session 和新版本对象
         updated_session = normalize_session_data(data)
         new_version = None
@@ -800,6 +988,17 @@ class StudioBackendService:
         if not ok:
             raise ValueError(f"回滚失败，未找到视角 {perspective_id} 对应的版本 {version_id}")
 
+        # 同步更新 prompts_matrix 为目标回滚版本的 prompt
+        for g in data.get("generated_images", []):
+            if canonicalize_perspective_id(g.get("id", "")) == canon_id:
+                for v in g.get("versions", []):
+                    if str(v.get("version_id")) == str(version_id):
+                        target_v_prompt = v.get("prompt", "")
+                        for item in data.get("prompts_matrix", []):
+                            if canonicalize_perspective_id(item.get("id", "")) == canon_id:
+                                item["prompt"] = target_v_prompt
+                        break
+
         updated = normalize_session_data(data)
         restored_prompt = ""
         active_v = "v1"
@@ -833,8 +1032,9 @@ class StudioBackendService:
         batch_t0 = time.time()
         data = session_manager.get_session(session_id)
         if not data:
-            logger.info(f"🔄 [Batch Render Self-Healing] 会话 {session_id} 尚未落盘，自动自愈初始化创建...")
-            data = self._get_or_create_session(session_id)
+            logger.warning(f"⚠️ [Batch Render Error] 会话 {session_id} 不存在")
+            yield f"event: error\ndata: {json.dumps({'error': f'专案不存在: {session_id}'}, ensure_ascii=False)}\n\n"
+            return
 
         # 同步前端传入的各视角当前最新镜头指导词
         if prompts and isinstance(prompts, dict):

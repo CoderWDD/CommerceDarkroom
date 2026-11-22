@@ -122,15 +122,15 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
     <>
       <div
         onClick={() => setActivePerspectiveId(perspective.id)}
-        className="flex flex-col justify-between bg-zinc-900/60 backdrop-blur-md border border-white/[0.08] hover:border-sky-500/40 rounded-xl p-3.5 shadow-xl transition-all duration-200 group"
+        className="flex flex-col justify-between bg-white border border-slate-200 hover:border-blue-400 rounded-xl p-3.5 shadow-card hover:shadow-card-hover transition-all duration-200 group cursor-pointer"
       >
         {/* Card Header: Slot No, Name, Status */}
         <div className="flex items-center justify-between pb-2">
           <div className="flex items-center gap-1.5 truncate pr-2">
-            <span className="font-mono text-[10px] font-bold text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20">
+            <span className="font-mono text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
               0{index + 1}
             </span>
-            <span className="text-xs font-semibold text-zinc-200 truncate">
+            <span className="text-xs font-semibold text-slate-800 truncate">
               {perspective.name}
             </span>
           </div>
@@ -138,65 +138,65 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
           <div className="flex items-center gap-1.5 shrink-0">
             {isRendering ? (
               <Badge variant="warning" className="text-[10px] py-0 px-1.5 gap-1 animate-pulse">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />
                 置景布光中
               </Badge>
             ) : isPending ? (
-              <Badge variant="outline" className="text-[10px] py-0 px-1.5 gap-1 border-amber-500/30 text-amber-300 bg-amber-500/5">
-                <Clock className="h-2.5 w-2.5 text-amber-400" />
+              <Badge variant="outline" className="text-[10px] py-0 px-1.5 gap-1 border-amber-200 text-amber-700 bg-amber-50/50">
+                <Clock className="h-2.5 w-2.5 text-amber-500" />
                 排队等待机位
               </Badge>
             ) : isError ? (
               <Badge
                 variant="destructive"
-                className="text-[10px] py-0 px-1.5 gap-1 bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                className="text-[10px] py-0 px-1.5 gap-1"
                 title={perspective.error_message}
               >
-                <AlertCircle className="h-3 w-3 text-rose-400" />
+                <AlertCircle className="h-3 w-3 text-red-600" />
                 出图失败
               </Badge>
             ) : displayImageUrl ? (
               <Badge variant="success" className="text-[10px] py-0 px-1.5 gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 就绪
               </Badge>
             ) : (
-              <Badge variant="outline" className="text-[10px] py-0 px-1.5 text-zinc-500">
+              <Badge variant="outline" className="text-[10px] py-0 px-1.5 text-slate-400 border-slate-200 bg-white">
                 待拍摄
               </Badge>
             )}
           </div>
         </div>
 
-        {/* Image Canvas Container */}
+        {/* Image Canvas Container (Pure White Photography Stage) */}
         <div
-          className={`relative w-full ${aspectRatioClass} rounded-lg overflow-hidden bg-zinc-950 border border-white/5 flex items-center justify-center`}
+          className={`relative w-full ${aspectRatioClass} rounded-lg overflow-hidden bg-white border border-slate-200 studio-stage-matte flex items-center justify-center`}
         >
           {isRendering ? (
             /* Shimmer Skeleton */
-            <div className="absolute inset-0 bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 bg-[length:200%_100%] animate-shimmer flex flex-col items-center justify-center gap-2 text-zinc-400">
-              <Camera className="h-7 w-7 text-sky-400/80 animate-pulse" />
-              <span className="text-[11px] font-mono text-zinc-300">
+            <div className="absolute inset-0 studio-shimmer-light flex flex-col items-center justify-center gap-2 text-slate-500">
+              <Camera className="h-7 w-7 text-blue-600 animate-pulse" />
+              <span className="text-[11px] font-medium text-slate-700">
                 正在渲染商业大片...
               </span>
             </div>
           ) : isPending ? (
             /* Queue Waiting Skeleton */
-            <div className="absolute inset-0 bg-zinc-950/80 border border-amber-500/10 flex flex-col items-center justify-center gap-2 text-zinc-400">
-              <Clock className="h-6 w-6 text-amber-400/60 animate-pulse" />
-              <span className="text-[11px] font-mono text-amber-300/80">
+            <div className="absolute inset-0 bg-amber-50/30 border border-amber-200/60 flex flex-col items-center justify-center gap-2 text-slate-500">
+              <Clock className="h-6 w-6 text-amber-500 animate-pulse" />
+              <span className="text-[11px] font-medium text-amber-800">
                 机位排队等待中...
               </span>
-              <span className="text-[10px] text-zinc-500">
+              <span className="text-[10px] text-slate-500">
                 串行保活模式 · 逐张稳定生成
               </span>
             </div>
           ) : isError ? (
             /* Error Fallback with Retry */
-            <div className="absolute inset-0 bg-rose-950/20 border border-rose-500/20 p-3 flex flex-col items-center justify-center gap-1.5 text-center">
-              <AlertTriangle className="h-6 w-6 text-rose-400" />
-              <span className="text-xs font-semibold text-rose-300">生图失败 / 接口异常</span>
-              <p className="text-[10px] text-zinc-400 line-clamp-2 px-2" title={perspective.error_message}>
+            <div className="absolute inset-0 bg-red-50/70 border border-red-200 p-3 flex flex-col items-center justify-center gap-1.5 text-center">
+              <AlertTriangle className="h-6 w-6 text-red-600" />
+              <span className="text-xs font-semibold text-red-700">生图失败 / 接口异常</span>
+              <p className="text-[10px] text-slate-500 line-clamp-2 px-2" title={perspective.error_message}>
                 {perspective.error_message || '当前中继代理端点未开通生图接口或连接超时'}
               </p>
               <Button
@@ -207,7 +207,7 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
                   handleRenderNewVersion();
                 }}
                 disabled={isRefiningSlot}
-                className="mt-1 h-6 text-[10px] gap-1 border-rose-500/40 text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
+                className="mt-1 h-6 text-[10px] gap-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
               >
                 <RefreshCw className={`h-3 w-3 ${isRefiningSlot ? 'animate-spin' : ''}`} />
                 <span>重试此机位</span>
@@ -224,7 +224,7 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
               />
 
               {/* Hover Overlay with Lightbox Trigger */}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <Button
                   variant="studio"
                   size="xs"
@@ -232,7 +232,7 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
                     e.stopPropagation();
                     setIsLightboxOpen(true);
                   }}
-                  className="gap-1 text-xs text-white bg-black/60 backdrop-blur-md hover:bg-black/80"
+                  className="gap-1 text-xs text-slate-900 bg-white/90 backdrop-blur-md hover:bg-white border-white/80 shadow-sm"
                 >
                   <ZoomIn className="h-3.5 w-3.5" />
                   <span>全屏查看</span>
@@ -241,10 +241,10 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
             </>
           ) : (
             /* Empty State Wireframe Placeholder */
-            <div className="flex flex-col items-center justify-center gap-1.5 text-zinc-600 p-4 text-center">
-              <Camera className="h-8 w-8 text-zinc-700" />
-              <span className="text-[11px] text-zinc-500">商业暗房机位已锁定</span>
-              <span className="text-[10px] text-zinc-600 line-clamp-1">
+            <div className="flex flex-col items-center justify-center gap-1.5 text-slate-400 p-4 text-center">
+              <Camera className="h-8 w-8 text-slate-300" />
+              <span className="text-[11px] font-medium text-slate-600">商业摄影展台机位已就绪</span>
+              <span className="text-[10px] text-slate-400 line-clamp-1">
                 {perspective.tag}
               </span>
             </div>
@@ -266,26 +266,26 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
         </div>
 
         {/* Collapsible Refine Panel */}
-        <div className="pt-2 border-t border-white/5 mt-2">
+        <div className="pt-2 border-t border-slate-100 mt-2">
           <button
             type="button"
             onClick={() => setIsRefineOpen(!isRefineOpen)}
-            className="flex items-center justify-between w-full text-[11px] text-zinc-400 hover:text-zinc-200 transition-colors py-0.5"
+            className="flex items-center justify-between w-full text-[11px] text-slate-500 hover:text-slate-800 transition-colors py-0.5"
           >
             <span className="flex items-center gap-1">
-              <Sparkles className="h-3 w-3 text-sky-400" />
+              <Sparkles className="h-3 w-3 text-blue-600" />
               <span>摄影布景二次微调</span>
             </span>
             {isRefineOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </button>
 
           {isRefineOpen && (
-            <div className="mt-2 space-y-2 pt-1 border-t border-white/5">
+            <div className="mt-2 space-y-2 pt-1 border-t border-slate-100">
               <Input
                 value={refineInstruction}
                 onChange={(e) => setRefineInstruction(e.target.value)}
                 placeholder="输入微调要求（如：增强杯口金属光泽与倒影）"
-                className="text-xs h-7 bg-zinc-950/70 border-white/10"
+                className="text-xs h-7 bg-white border-slate-200 text-slate-900"
                 onKeyDown={(e) => e.key === 'Enter' && handleRenderNewVersion()}
               />
 
@@ -323,18 +323,18 @@ export const StudioPerspectiveCard: React.FC<StudioPerspectiveCardProps> = ({
 
       {/* Lightbox Modal */}
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
-        <DialogContent className="max-w-4xl bg-black/95 border-white/10 p-2 flex flex-col items-center justify-center">
+        <DialogContent className="max-w-4xl bg-white border-slate-200 p-2 flex flex-col items-center justify-center text-slate-900 shadow-popover">
           {displayImageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={displayImageUrl}
               alt={perspective.name}
-              className="max-h-[80vh] w-auto object-contain rounded-lg shadow-2xl"
+              className="max-h-[80vh] w-auto object-contain rounded-lg shadow-md"
             />
           )}
-          <div className="w-full px-4 py-2 flex items-center justify-between text-xs text-zinc-300">
-            <span className="font-semibold text-zinc-100">{perspective.name}</span>
-            <span className="font-mono text-zinc-400">版本: {selectedVersionId}</span>
+          <div className="w-full px-4 py-2 flex items-center justify-between text-xs text-slate-700">
+            <span className="font-semibold text-slate-900">{perspective.name}</span>
+            <span className="font-mono text-slate-500">版本: {selectedVersionId}</span>
           </div>
         </DialogContent>
       </Dialog>
