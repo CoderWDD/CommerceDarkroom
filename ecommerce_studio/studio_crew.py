@@ -585,12 +585,37 @@ def generate_vision_matrix_with_ai(
 ]
 ```"""
 
+    # 提取参考资产：区分产品实拍图(真实原貌锁模)与对标商品图(商业构图参考)
+    ref_images = product_info.get("reference_images") or []
+    actual_tags: List[str] = []
+    competitor_tags: List[str] = []
+
+    for r in ref_images:
+        if isinstance(r, dict):
+            atype = r.get("asset_type") or "actual"
+            vtags = r.get("vision_tags") or []
+            if atype == "competitor":
+                competitor_tags.extend(vtags)
+            else:
+                actual_tags.extend(vtags)
+        elif isinstance(r, str):
+            actual_tags.append("#产品实物原貌")
+
+    actual_tags = list(dict.fromkeys(actual_tags))
+    competitor_tags = list(dict.fromkeys(competitor_tags))
+
+    ref_instructions = ""
+    if actual_tags:
+        ref_instructions += f"\n- 📸【产品实拍图锚定特征 (必须100%严格保真，严禁外观走样)】：{', '.join(actual_tags)}。\n  * 核心要求：生成的9个视角提示词中，核心主体商品的几何外形、表面工业材质、接缝工艺与物理特征必须严格忠实于实拍图，杜绝货不对板！"
+    if competitor_tags:
+        ref_instructions += f"\n- 🛒【对标电商商品图参考 (商业构图与光影标杆)】：{', '.join(competitor_tags)}。\n  * 核心要求：充分吸收对标商品图的高质感商业布光、展台陈列层次与买家心智种草构图，使生成大片兼具真实与高转化！"
+
     user_query = f"""【待策划商品档案】：
 - 商品名称：{prod_name}
 - 品类属性：{category}
 - 核心材质与做工：{material}
 - 目标消费客群：{audience}
-- 核心买家顾虑/痛点：{pain_points}
+- 核心买家顾虑/痛点：{pain_points}{ref_instructions}
 - 选定视觉美学流派：{preset.name} ({preset.en_name})
   * 风格定位：{preset.tagline}
   * 光影方案：{preset.lighting}
@@ -599,7 +624,7 @@ def generate_vision_matrix_with_ai(
   * 调性色彩：{preset.color_tone}
   * 防漂移规则：{", ".join(preset.anti_drift_rules)}
 
-请根据上述商品档案与流派，作为商业摄影总监全自主推理生成 9 大黄金商业视角的结构化 JSON 方案："""
+请根据上述商品档案、实拍图保真锚定与对标商品图参考，作为商业摄影总监全自主推理生成 9 大黄金商业视角的结构化 JSON 方案："""
 
     def _call_model() -> str:
         if provider == "gemini":

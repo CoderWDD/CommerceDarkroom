@@ -96,11 +96,14 @@ export const studioApi = {
     asset_url?: string;
     session_id?: string;
     category_hint?: string;
-  }): Promise<VisionExtractDossierResponse> {
+    asset_type?: 'actual' | 'competitor';
+  }): Promise<VisionExtractDossierResponse & { asset_type?: string }> {
     const baseUrl = getBaseUrl();
+    const targetAssetType = input.asset_type || 'actual';
     if (input.file) {
       const formData = new FormData();
       formData.append('file', input.file);
+      formData.append('asset_type', targetAssetType);
       if (input.session_id) formData.append('session_id', input.session_id);
       if (input.category_hint) formData.append('category_hint', input.category_hint);
 
@@ -125,6 +128,7 @@ export const studioApi = {
           session_id: input.session_id,
           asset_url: input.asset_url,
           category_hint: input.category_hint,
+          asset_type: targetAssetType,
         }),
       });
       if (!res.ok) {
@@ -142,24 +146,33 @@ export const studioApi = {
   async extractDossierFromPhoto(
     file: File,
     hint?: string,
-    sessionId?: string
-  ): Promise<VisionExtractDossierResponse> {
+    sessionId?: string,
+    assetType: 'actual' | 'competitor' = 'actual'
+  ): Promise<VisionExtractDossierResponse & { asset_type?: string }> {
     return this.extractDossier({
       file,
       category_hint: hint,
       session_id: sessionId,
+      asset_type: assetType,
     });
   },
 
   // 4. Step 1: 资产上传与解析 (传统)
-  async uploadAsset(sessionId: string, file: File, isPrimary: boolean = false): Promise<{
+  async uploadAsset(
+    sessionId: string,
+    file: File,
+    isPrimary: boolean = false,
+    assetType: 'actual' | 'competitor' = 'actual'
+  ): Promise<{
     id: string;
     url: string;
     vision_tags: string[];
+    asset_type: string;
   }> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('is_primary', String(isPrimary));
+    formData.append('asset_type', assetType);
     const res = await timedFetch(`${getBaseUrl()}/sessions/${sessionId}/assets/upload`, {
       method: 'POST',
       body: formData,

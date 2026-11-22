@@ -7,6 +7,7 @@ import {
   ProductDossier,
   SessionSummary,
   StylePresetId,
+  ReferenceImage,
 } from '@/types/session';
 import { STANDARD_PERSPECTIVES_META } from '@/lib/constants';
 import { studioApi } from '@/lib/api-client';
@@ -59,8 +60,8 @@ interface StudioState {
 
   // v2.0 Actions
   setStylePreset: (presetId: StylePresetId | string) => void;
-  extractDossierFromPhoto: (file: File, hint?: string) => Promise<void>;
-  extractDossierFromExistingAsset: (assetUrl: string, hint?: string) => Promise<void>;
+  extractDossierFromPhoto: (file: File, hint?: string, assetType?: 'actual' | 'competitor') => Promise<void>;
+  extractDossierFromExistingAsset: (assetUrl: string, hint?: string, assetType?: 'actual' | 'competitor') => Promise<void>;
 
   // Version Control Actions
   selectPreviewVersion: (perspectiveId: string, versionId: string) => void;
@@ -149,7 +150,11 @@ export const useStudioStore = create<StudioState>()(
         });
       },
 
-      extractDossierFromPhoto: async (file: File, hint?: string) => {
+      extractDossierFromPhoto: async (
+        file: File,
+        hint?: string,
+        assetType: 'actual' | 'competitor' = 'actual'
+      ) => {
         let session = get().currentSession;
         if (!session) {
           get().initDefaultSession();
@@ -157,26 +162,37 @@ export const useStudioStore = create<StudioState>()(
         }
         const sessionId = session?.session_id;
 
+        const isCompetitor = assetType === 'competitor';
         set({
           isExtractingDossier: true,
-          extractionProgressText: '多模态大脑正在审视随手拍实物图...',
+          extractionProgressText: isCompetitor
+            ? '多模态大脑正在拆解对标电商大片构图与布光...'
+            : '多模态大脑正在审视产品实拍图，提取物理材质...',
           error: null,
         });
 
         const timer1 = setTimeout(() => {
           if (get().isExtractingDossier) {
-            set({ extractionProgressText: '正在逆向分析工业材质特征与光学几何...' });
+            set({
+              extractionProgressText: isCompetitor
+                ? '正在逆向分析电商大片视觉层次与买家心理动线...'
+                : '正在逆向分析实物工业材质特征与光学几何...',
+            });
           }
         }, 1200);
 
         const timer2 = setTimeout(() => {
           if (get().isExtractingDossier) {
-            set({ extractionProgressText: '正在萃取客群决策抗拒点与视觉微标签...' });
+            set({
+              extractionProgressText: isCompetitor
+                ? '正在提取对标商业光影色彩与展台陈列标签...'
+                : '正在提取真实物理形体特征与防走样锁模标签...',
+            });
           }
         }, 2600);
 
         try {
-          const res = await studioApi.extractDossierFromPhoto(file, hint, sessionId);
+          const res = await studioApi.extractDossierFromPhoto(file, hint, sessionId, assetType);
           clearTimeout(timer1);
           clearTimeout(timer2);
 
@@ -184,35 +200,63 @@ export const useStudioStore = create<StudioState>()(
           if (!current) return;
 
           const updatedRefImages = [...(current.product_info.reference_images || [])];
-          const newRef = {
+          
+          // 若为实拍图，设置为当前首选保真主图；若为竞品图，标记为 competitor
+          const isPrimary = !isCompetitor;
+          const defaultTags = isCompetitor
+            ? ['#对标电商构图', '#商业光影大片']
+            : ['#实拍产品原貌', '#实物材质锁模'];
+
+          const newRef: ReferenceImage = {
             id: `snap_${Date.now()}`,
             url: res.asset_url,
-            is_primary: true,
-            vision_tags: res.dossier.visual_tags?.length > 0 ? res.dossier.visual_tags : ['#随手拍逆向', '#实物材质'],
+            is_primary: isPrimary,
+            asset_type: assetType,
+            vision_tags: res.dossier.visual_tags?.length > 0 ? res.dossier.visual_tags : defaultTags,
           };
-          const finalRefImages = [
+
+          const finalRefImages: ReferenceImage[] = [
             newRef,
-            ...updatedRefImages.map((img) => ({ ...img, is_primary: false })),
+            ...updatedRefImages.map((img) => ({
+              ...img,
+              is_primary: isPrimary ? false : img.is_primary,
+            })),
           ];
+
+          // 标签合并与去重
+          const combinedVisualTags = Array.from(
+            new Set([...(current.product_info.visual_tags || []), ...(res.dossier.visual_tags || [])])
+          );
+
+          // 若已有实拍产品名且当前上传的是竞品图，保留实物名称，避免被竞品冲掉
+          const resolvedProdName =
+            isCompetitor && current.product_info.name && current.product_info.name !== '未命名商品'
+              ? current.product_info.name
+              : res.dossier.product_name || current.product_info.name;
 
           const newDossier: ProductDossier = {
             ...current.product_info,
-            name: res.dossier.product_name || current.product_info.name,
+            name: resolvedProdName,
             category: res.dossier.category || current.product_info.category,
-            material_features: res.dossier.material_features || current.product_info.material_features,
+            material_features:
+              !isCompetitor || !current.product_info.material_features
+                ? res.dossier.material_features || current.product_info.material_features
+                : current.product_info.material_features,
             target_audience: res.dossier.target_users || current.product_info.target_audience,
             pain_points: res.dossier.pain_points || current.product_info.pain_points,
             reference_images: finalRefImages,
-            visual_tags: res.dossier.visual_tags || [],
-            color_palette: res.dossier.color_palette || [],
+            visual_tags: combinedVisualTags,
+            color_palette: res.dossier.color_palette?.length ? res.dossier.color_palette : current.product_info.color_palette || [],
           };
 
           set({
             isExtractingDossier: false,
-            extractionProgressText: '建档完成！已智能回填商品档案',
+            extractionProgressText: isCompetitor
+              ? '对标分析完成！已汲取商业大片构图精髓'
+              : '实拍建档完成！已锁定产品真实形态与材质',
             currentSession: {
               ...current,
-              name: res.dossier.product_name ? `${res.dossier.product_name}商业视觉全案` : current.name,
+              name: resolvedProdName ? `${resolvedProdName}商业视觉全案` : current.name,
               product_info: newDossier,
               updated_at: Math.floor(Date.now() / 1000),
               // 上传新照片后，清理旧商品视角提示词与成图，准备全新推演
@@ -242,13 +286,17 @@ export const useStudioStore = create<StudioState>()(
         }
       },
 
-      extractDossierFromExistingAsset: async (assetUrl: string, hint?: string) => {
+      extractDossierFromExistingAsset: async (
+        assetUrl: string,
+        hint?: string,
+        assetType: 'actual' | 'competitor' = 'actual'
+      ) => {
         const session = get().currentSession;
         if (!session) return;
 
         set({
           isExtractingDossier: true,
-          extractionProgressText: '正在解析指定参考图...',
+          extractionProgressText: assetType === 'competitor' ? '正在解析对标商品参考图...' : '正在解析产品实拍图...',
           error: null,
         });
 
@@ -257,6 +305,7 @@ export const useStudioStore = create<StudioState>()(
             asset_url: assetUrl,
             session_id: session.session_id,
             category_hint: hint,
+            asset_type: assetType,
           });
 
           const current = get().currentSession;

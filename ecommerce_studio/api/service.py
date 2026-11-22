@@ -574,18 +574,43 @@ class StudioBackendService:
             abs_path = base_dir / "output" / clean_url
         return str(abs_path)
 
+    def get_primary_reference_asset(self, session_data: Dict[str, Any], asset_type: str = "actual") -> Optional[str]:
+        """获取指定类型（如 'actual' 实拍图 或 'competitor' 对标商品图）的主参考图本地绝对磁盘路径"""
+        prod_info = session_data.get("product_info") or {}
+        ref_imgs = prod_info.get("reference_images") or []
+        candidate_url = None
+        for item in ref_imgs:
+            if isinstance(item, dict):
+                item_type = item.get("asset_type") or "actual"
+                if item_type == asset_type:
+                    if item.get("is_primary"):
+                        candidate_url = item.get("url") or item.get("file_path")
+                        break
+                    if not candidate_url:
+                        candidate_url = item.get("url") or item.get("file_path")
+            elif isinstance(item, str) and asset_type == "actual":
+                if not candidate_url:
+                    candidate_url = item
+
+        if candidate_url:
+            abs_p = self.resolve_asset_path(candidate_url)
+            if os.path.exists(abs_p):
+                return abs_p
+        return None
+
     async def extract_dossier_from_image(
         self,
         image_bytes: bytes,
         category_hint: Optional[str] = "",
         session_id: Optional[str] = None,
         filename: Optional[str] = None,
+        asset_type: str = "actual",
     ) -> Tuple[Any, str]:
         """随手拍多模态逆向萃取商品商业档案 (多模型容错与规则熔断兜底)"""
         from ecommerce_studio.vision_adapter import MultiModalVisionAdapter
         config = self.get_config()
         adapter = MultiModalVisionAdapter(config)
-        dossier, provider = await adapter.extract_dossier(image_bytes, category_hint=category_hint)
+        dossier, provider = await adapter.extract_dossier(image_bytes, category_hint=category_hint, asset_type=asset_type)
         return dossier, provider
 
     def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
@@ -913,6 +938,11 @@ class StudioBackendService:
         out_dir = str(base_dir / "output" / session_id / canon_id)
         os.makedirs(out_dir, exist_ok=True)
 
+        # 检索当前专案的主实拍图（若有），作为锁模出图参考
+        actual_ref_path = self.get_primary_reference_asset(data, asset_type="actual")
+        if actual_ref_path:
+            logger.info(f"🔒 [Identity Lock] 检测到实拍参考资产，启用物理防走样锁模出图: {actual_ref_path}")
+
         # 出图调用
         active_p = config.get("active_provider", "gemini")
         try:
@@ -923,6 +953,7 @@ class StudioBackendService:
                 output_dir=out_dir,
                 aspect_ratio=aspect_ratio,
                 filename_prefix=canon_id,
+                reference_image_path=actual_ref_path,
             )
         except Exception as e:
             elapsed = time.time() - t0

@@ -107,10 +107,12 @@ async def extract_product_dossier(
     session_id: Optional[str] = Form(None),
     asset_url: Optional[str] = Form(None),
     category_hint: Optional[str] = Form(""),
+    asset_type: Optional[str] = Form("actual"),
     file: Optional[UploadFile] = File(None),
 ):
     """
-    随手拍实物图多模态逆向建档接口。
+    随手拍实物图/对标商品图多模态逆向建档接口。
+    支持区分 asset_type: 'actual' (产品实拍图: 锁模保真) 或 'competitor' (对标商品图: 商业构图参考)。
     支持 multipart/form-data 直传，或 JSON payload (通过 request.json() 解析已上传 asset)。
     """
     t0 = time.time()
@@ -118,6 +120,7 @@ async def extract_product_dossier(
     final_asset_url = ""
     target_sid = session_id
     cat_hint = category_hint or ""
+    target_asset_type = asset_type or "actual"
 
     # 1. 判断是否为 application/json 传参
     content_type = request.headers.get("content-type", "")
@@ -129,6 +132,7 @@ async def extract_product_dossier(
         target_sid = body.get("session_id") or target_sid
         asset_url = body.get("asset_url") or body.get("asset_path")
         cat_hint = body.get("category_hint") or cat_hint
+        target_asset_type = body.get("asset_type") or target_asset_type
 
     # 2. 获取图片实体 (二进制流或本地文件路径)
     if file:
@@ -151,6 +155,7 @@ async def extract_product_dossier(
             image_bytes=raw_bytes,
             category_hint=cat_hint,
             session_id=target_sid,
+            asset_type=target_asset_type,
         )
     except Exception as e:
         logger.error(f"多模态逆向提取异常: {str(e)}", exc_info=True)
@@ -161,6 +166,7 @@ async def extract_product_dossier(
         success=True,
         session_id=target_sid,
         asset_url=final_asset_url,
+        asset_type=target_asset_type,
         dossier=extracted_dossier,
         model_provider=provider_used,
         execution_time_ms=elapsed_ms,
@@ -172,8 +178,9 @@ async def upload_asset(
     session_id: str,
     file: UploadFile = File(...),
     is_primary: bool = Form(False),
+    asset_type: str = Form("actual"),
 ):
-    """上传实物参考图并生成多模态视觉微标签"""
+    """上传实物参考图/对标商品图并生成多模态视觉微标签"""
     sess = studio_service.get_session(session_id)
     if not sess:
         raise HTTPException(status_code=404, detail=f"专案 {session_id} 未找到")
@@ -193,20 +200,41 @@ async def upload_asset(
 
     rel_url = f"/output/uploads/{session_id}/{safe_name}"
 
-    # 生成高质感多模态标签
-    vision_tags = ["#纯黑哑光涂层", "#医用不锈钢内胆", "#圆柱极简线条", "#冷光数显杯盖"]
-    if "white" in safe_name.lower():
-        vision_tags[0] = "#纯白极简机身"
-    elif "silver" in safe_name.lower():
-        vision_tags[0] = "#阳极氧化铝拉丝"
+    # 根据 asset_type 生成高质感多模态标签
+    if asset_type == "competitor":
+        vision_tags = ["#大牌电商构图", "#通透商业漫射光", "#生活场景代入", "#高点击率展台"]
+    else:
+        vision_tags = ["#纯黑哑光涂层", "#医用不锈钢内胆", "#圆柱极简线条", "#冷光数显杯盖"]
+        if "white" in safe_name.lower():
+            vision_tags[0] = "#纯白极简机身"
+        elif "silver" in safe_name.lower():
+            vision_tags[0] = "#阳极氧化铝拉丝"
 
-    # 同步记录到 session 的 product_info.reference_images
+    # 同步记录到 session 的 product_info.reference_images (支持对象结构与 URL 兼容)
     prod_info = sess.get("product_info") or {}
     ref_imgs = prod_info.setdefault("reference_images", [])
-    if rel_url not in ref_imgs:
-        ref_imgs.append(rel_url)
-    session_manager = studio_service
-    studio_service.update_prompt(session_id, "01_white_bg", sess["perspectives"][0]["prompt_zh"])
+    
+    asset_obj = {
+        "id": dest_path.stem,
+        "url": rel_url,
+        "file_path": str(dest_path),
+        "is_primary": is_primary,
+        "asset_type": asset_type,
+        "vision_tags": vision_tags,
+    }
+    
+    # 避免重复
+    existing_idx = None
+    for idx, item in enumerate(ref_imgs):
+        item_url = item.get("url") if isinstance(item, dict) else item
+        if item_url == rel_url:
+            existing_idx = idx
+            break
+            
+    if existing_idx is not None:
+        ref_imgs[existing_idx] = asset_obj
+    else:
+        ref_imgs.append(asset_obj)
 
     return {
         "success": True,
@@ -214,6 +242,7 @@ async def upload_asset(
         "asset_id": dest_path.stem,
         "filename": safe_name,
         "is_primary": is_primary,
+        "asset_type": asset_type,
         "vision_tags": vision_tags,
     }
 

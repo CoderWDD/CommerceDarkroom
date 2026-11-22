@@ -89,11 +89,14 @@ export interface Perspective {
 
 export type PerspectiveItem = Perspective;
 
+export type AssetType = 'actual' | 'competitor';
+
 export interface ReferenceImage {
   id: string;
   url: string;
   file_path?: string;
   is_primary: boolean;
+  asset_type?: AssetType; // 'actual': 实拍图 (产品原貌，出图保真锁模); 'competitor': 对标商品图 (电商爆款，商业构图参考)
   vision_tags: string[];
 }
 

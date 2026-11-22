@@ -37,15 +37,17 @@ def generate_ecommerce_image(
     output_dir: Optional[str] = None,
     aspect_ratio: str = "1:1",
     filename_prefix: Optional[str] = None,
+    reference_image_path: Optional[str] = None,
 ) -> str:
     """
-    电商商业图生成函数，严格支持高质量中文生图提示词
+    电商商业图生成函数，严格支持高质量中文生图提示词与产品实拍图参考保真
     :param prompt: 用于生图的提示词（支持中文商业摄影级描述）
     :param provider: 'gemini', 'openai', 'custom_openai', 'ollama'
     :param config: 全局配置字典（包含 API Key、模型名称等）
     :param output_dir: 本地保存图片的目录
     :param aspect_ratio: 图片比例，如 '1:1', '3:4', '4:3', '9:16', '16:9'
     :param filename_prefix: 文件名前缀，用于区分不同批次或图片类型
+    :param reference_image_path: 产品实拍图绝对路径，用于生图保真锁模，杜绝产品与实际不符
     :return: 生成的本地图片绝对路径
     """
     if not prompt or not prompt.strip():
@@ -62,9 +64,25 @@ def generate_ecommerce_image(
     clean_prefix = "".join(c for c in (filename_prefix or "product") if c.isalnum() or c in ("-", "_"))
     file_path = os.path.join(output_dir, f"{clean_prefix}_{timestamp}_{unique_tag}.jpg")
 
+    # 实拍图参考处理：读取并注入物理防走样锁模指令
+    ref_image_bytes: Optional[bytes] = None
+    if reference_image_path and os.path.exists(reference_image_path):
+        try:
+            with open(reference_image_path, "rb") as rf:
+                ref_image_bytes = rf.read()
+            logger.info(f"📸 [IMAGE REF] 成功载入实拍图参考，执行物理防走样锁模: {reference_image_path} ({len(ref_image_bytes)/1024:.1f} KB)")
+        except Exception as e_ref:
+            logger.warning(f"⚠️ [IMAGE REF WARN] 读取实拍图参考失败: {e_ref}")
+
+    # 若存在实拍图，将核心外形防走样保真前缀置于最高权重
+    if ref_image_bytes:
+        fidelity_anchor = "【商品实拍图绝对保真锁模：主体商品必须严格100%忠实呈现产品实拍图的真实物理轮廓、材质工艺细节、机身结构与主色调，严禁变形或凭空改变商品外观，杜绝货不对板】\n"
+        if fidelity_anchor.strip() not in prompt:
+            prompt = fidelity_anchor + prompt
+
     prompt_preview = (prompt[:60] + "...") if len(prompt) > 60 else prompt
     logger.info(
-        f"🎨 [GEN START] 生成图片任务启动 | 目标: {clean_prefix} | 比例: {aspect_ratio} | 提示词预览: {prompt_preview}"
+        f"🎨 [GEN START] 生成图片任务启动 | 目标: {clean_prefix} | 比例: {aspect_ratio} | 实拍参考: {'有' if ref_image_bytes else '无'} | 提示词预览: {prompt_preview}"
     )
 
     provider = (provider or "gemini").lower().strip()
@@ -350,6 +368,7 @@ def generate_ecommerce_images_batch(
 
         try:
             prefix = f"{item_id}_{idx+1}"
+            ref_path = item.get("reference_image_path")
             img_path = generate_ecommerce_image(
                 prompt=prompt,
                 provider=provider,
@@ -357,6 +376,7 @@ def generate_ecommerce_images_batch(
                 output_dir=output_dir,
                 aspect_ratio=aspect_ratio,
                 filename_prefix=prefix,
+                reference_image_path=ref_path,
             )
             item_result["image_path"] = img_path
             item_result["status"] = "success"

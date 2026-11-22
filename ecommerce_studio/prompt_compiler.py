@@ -486,6 +486,28 @@ class PromptMatrixCompiler:
             if style_enhancement:
                 prompt += f"【流派专属强化】：{style_enhancement}。"
 
+            # 资产协同强化：产品实拍图保真与对标商品图参考
+            ref_imgs = product_info.get("reference_images") or []
+            actual_tags = []
+            competitor_tags = []
+            for r in ref_imgs:
+                if isinstance(r, dict):
+                    atype = r.get("asset_type") or "actual"
+                    vtags = r.get("vision_tags") or []
+                    if atype == "competitor":
+                        competitor_tags.extend(vtags)
+                    else:
+                        actual_tags.extend(vtags)
+                elif isinstance(r, str):
+                    actual_tags.append("#实物实拍")
+            actual_tags = list(dict.fromkeys(actual_tags))
+            competitor_tags = list(dict.fromkeys(competitor_tags))
+
+            if actual_tags:
+                prompt += f"【产品实拍图保真锁模】：严格100%忠实呈现产品实物外观特征（{', '.join(actual_tags[:4])}），绝对严禁改变产品形体与用料。 "
+            if competitor_tags:
+                prompt += f"【对标商品图构图吸收】：借鉴对标爆款电商图的商业光影与构图（{', '.join(competitor_tags[:3])}）。 "
+
             # 视角专属业务强化
             if pid == "05_pain_killer":
                 effective_pain = pain_points or "耐用抗损与核心品质顾虑"

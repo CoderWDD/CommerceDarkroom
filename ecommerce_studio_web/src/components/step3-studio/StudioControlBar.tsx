@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   XCircle,
   Clock,
+  Camera,
 } from 'lucide-react';
 import { useStudioStore } from '@/stores/useStudioStore';
 import { useBatchRenderer } from '@/hooks/useBatchRenderer';
@@ -16,6 +17,7 @@ import { Button } from '@/components/ui/button';
 
 export const StudioControlBar: React.FC = () => {
   const {
+    currentSession,
     aspectRatio,
     setAspectRatio,
   } = useStudioStore();
@@ -26,6 +28,9 @@ export const StudioControlBar: React.FC = () => {
     startBatchRender,
     stopBatchRender,
   } = useBatchRenderer();
+
+  const refImages = currentSession?.product_info?.reference_images || [];
+  const hasActualRef = refImages.some((img) => (img.asset_type || 'actual') === 'actual');
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-card flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -73,6 +78,25 @@ export const StudioControlBar: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Reference Image Physical Lock Indicator */}
+        {hasActualRef ? (
+          <div
+            className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-200 rounded-lg text-xs"
+            title="已载入产品实拍图作为出图基准，生图时自动注入物理防走样锁模，确保产品外观与实物完全相符"
+          >
+            <Camera className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+            <span className="text-blue-800 font-medium">实拍保真锁模已生效</span>
+            <span className="text-[10px] text-blue-600 font-mono">· 杜绝货不对板</span>
+          </div>
+        ) : (
+          <div
+            className="flex items-center gap-1.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-500"
+            title="未上传产品实拍图，将基于文字描述渲染"
+          >
+            <span>纯文生图模式 (无实拍图)</span>
+          </div>
+        )}
 
         {/* Concurrency Mode (Locked to 1 for 100% Stability & Zero 429 Errors) */}
         <div

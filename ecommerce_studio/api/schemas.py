@@ -3,6 +3,15 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
 
 
+class ReferenceAssetItem(BaseModel):
+    id: str = Field(..., description="资产唯一ID")
+    url: str = Field(..., description="资产相对或绝对访问URL")
+    file_path: Optional[str] = Field(default=None, description="物理磁盘路径")
+    is_primary: bool = Field(default=False, description="是否为主参考图")
+    asset_type: str = Field(default="actual", description="资产类型: 'actual' (产品实拍图) 或 'competitor' (电商商品图/竞品图)")
+    vision_tags: List[str] = Field(default_factory=list, description="多模态视觉微标签")
+
+
 class ProductDossier(BaseModel):
     product_name: Optional[str] = Field(default="", description="商品全称")
     name: Optional[str] = Field(default="", description="兼容名称字段")
@@ -11,7 +20,7 @@ class ProductDossier(BaseModel):
     target_users: Optional[str] = Field(default="", description="目标客群画像")
     target_audience: Optional[str] = Field(default="", description="兼容目标客群字段")
     pain_points: Optional[str] = Field(default="", description="竞品短板与买家核心抗拒点")
-    reference_images: Optional[List[Union[str, Dict[str, Any]]]] = Field(default_factory=list, description="实物参考图URL列表或对象列表")
+    reference_images: Optional[List[Union[str, Dict[str, Any], ReferenceAssetItem]]] = Field(default_factory=list, description="实物参考图URL列表或对象列表")
     visual_tags: Optional[List[str]] = Field(default_factory=list, description="逆向提取的视觉微标签")
     color_palette: Optional[List[str]] = Field(default_factory=list, description="提取的主色调配色方案")
 
@@ -21,6 +30,7 @@ class VisionExtractDossierRequest(BaseModel):
     session_id: Optional[str] = Field(default=None, description="所属专案会话ID，若有则自动关联资产")
     asset_url: Optional[str] = Field(default=None, description="已上传资产的相对或绝对URL路径，如 /output/uploads/xxx.jpg")
     asset_path: Optional[str] = Field(default=None, description="后端文件物理绝对路径")
+    asset_type: Optional[str] = Field(default="actual", description="资产类型: 'actual' (实拍图) 或 'competitor' (商品图/对标图)")
     category_hint: Optional[str] = Field(default="", description="用户可选输入的品类提示（如'保温杯'），降低冷启动盲猜")
 
 
@@ -41,6 +51,7 @@ class VisionExtractDossierResponse(BaseModel):
     success: bool = Field(default=True, description="处理是否成功")
     session_id: Optional[str] = Field(default=None, description="关联会话ID")
     asset_url: str = Field(..., description="最终落盘资产访问URL")
+    asset_type: str = Field(default="actual", description="资产类型: 'actual' (实拍图) 或 'competitor' (商品图)")
     dossier: ProductDossierExtracted = Field(..., description="逆向提炼得到的商品档案")
     model_provider: str = Field(..., description="实际提供推理的多模态模型通道 (gemini / openai / rule_fallback)")
     execution_time_ms: int = Field(..., description="耗时毫秒数")

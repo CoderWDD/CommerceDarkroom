@@ -124,6 +124,27 @@ export const Step2Container: React.FC = () => {
               <span>商品：{productName}</span>
             </span>
 
+            {/* 实拍图与对标图资产统计标签 */}
+            {(() => {
+              const refs = currentSession?.product_info?.reference_images || [];
+              const actuals = refs.filter((r) => (r.asset_type || 'actual') === 'actual').length;
+              const competitors = refs.filter((r) => r.asset_type === 'competitor').length;
+              return (
+                <>
+                  {actuals > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-100/80 border border-blue-300 text-blue-800 font-medium shadow-2xs">
+                      <span>📸 实拍图 {actuals} 张 (锁模保真)</span>
+                    </span>
+                  )}
+                  {competitors > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100/80 border border-amber-300 text-amber-800 font-medium shadow-2xs">
+                      <span>🛒 对标商品图 {competitors} 张 (构图参考)</span>
+                    </span>
+                  )}
+                </>
+              );
+            })()}
+
             {category && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white border border-slate-200 text-slate-800 font-medium shadow-2xs">
                 <span>品类：{category}</span>
