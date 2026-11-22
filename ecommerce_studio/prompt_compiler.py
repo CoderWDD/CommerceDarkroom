@@ -177,17 +177,65 @@ BASE_PERSPECTIVE_STRATEGIES: Dict[str, Dict[str, Any]] = {
 }
 
 
+def is_complex_mechanical_product(prod_name: str, category: str = "", materials: str = "") -> bool:
+    """
+    智能研判商品是否属于具备内部精密机电/装配元器件的复杂产品。
+    - 针对非复杂精密机械/组装结构的商品（如逗猫棒、羽绒服、餐盘、玩具、日常百货、普通服饰、基础宠物用品等），
+      应自适应生成材质用料、耐用抗拉扯/抗磨损工序工艺解析图；
+    - 针对复杂机械/数码/智能家电/精密仪器，生成真实的内部精密组件结构悬浮爆炸解析。
+    """
+    text = f"{prod_name} {category} {materials}".lower()
+
+    # 优先强排除典型非复杂装配结构品类（如逗猫棒、宠物玩具、衣服、鞋、餐具、日常百货、化妆品等）
+    non_complex_keywords = [
+        "逗猫棒", "猫抓板", "猫爬架", "猫窝", "宠物玩具", "牵引绳", "项圈", "猫条", "宠物碗", "水碗", "猫粮", "狗粮", "拾便袋",
+        "服饰", "服装", "羽绒服", "外套", "内衣", "衬衫", "t恤", "毛衣", "针织", "裤", "裙", "鞋", "包", "手袋", "围巾", "帽子",
+        "餐具", "餐盘", "碗", "碟", "筷", "杯", "马克杯", "水杯", "锅", "平底锅", "铁锅",
+        "床品", "四件套", "毛巾", "浴巾", "日用", "百货", "玩具", "玩偶", "毛绒", "公仔", "积木",
+        "美妆", "护肤", "口红", "粉底", "面霜", "原液", "面膜", "洗发水", "沐浴露", "香水", "眼影", "洁面",
+        "食品", "零食", "茶叶", "生鲜", "饮料", "水果", "坚果", "肉类"
+    ]
+
+    # 复杂机电/智能/电子强特征词
+    electric_smart_keywords = [
+        "智能", "电动", "自动", "数显", "蓝牙", "无线", "芯片", "传感器", "马达", "电机", "主板", "电路", "主控"
+    ]
+
+    has_non_complex = any(k in text for k in non_complex_keywords)
+    has_electric_smart = any(k in text for k in electric_smart_keywords)
+
+    if has_non_complex and not has_electric_smart:
+        return False
+
+    if has_electric_smart:
+        return True
+
+    # 复杂数码/机械关键词
+    complex_keywords = [
+        "耳机", "手机", "电脑", "键盘", "鼠标", "音箱", "相机", "显示器", "主机",
+        "无人机", "吸尘器", "扫地机", "电饭煲", "咖啡机", "吹风机", "剃须刀", "电动牙刷", "投影仪",
+        "电钻", "割草机", "发动机", "五金工具", "机械", "汽摩配件", "空气净化器", "洗衣机", "冰箱", "空调"
+    ]
+    return any(k in text for k in complex_keywords)
+
+
 def get_perspective_strategy_data(
     pid: str,
     product_info: Dict[str, Any],
-    vertical: str = "general",
+    vertical: Optional[str] = None,
     style_preset_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """生成兼具行业垂直属性与商品定制特性的策略高光与微调胶囊"""
     base = BASE_PERSPECTIVE_STRATEGIES.get(pid) or BASE_PERSPECTIVE_STRATEGIES["01_white_bg"]
     prod_name = product_info.get("name") or product_info.get("product_name") or "商品"
+    category = product_info.get("category", "")
     pain_points = product_info.get("pain_points") or ""
     materials = product_info.get("material_features") or ""
+
+    if not vertical or vertical == "general":
+        vertical = detect_product_vertical(prod_name, category, materials)
+
+    is_complex = is_complex_mechanical_product(prod_name, category, materials)
 
     highlight = base["scene_highlight"]
     strategy = base["commercial_strategy"]
@@ -198,7 +246,7 @@ def get_perspective_strategy_data(
         highlight = f"30°纯白无影展台微俯视，极浅镜面接触微倒影，完整呈现【{prod_name}】主体结构与质地，主体占比80%"
     elif pid == "02_scene":
         if vertical == "pet":
-            highlight = f"置于现代简约客厅阳光落地窗边木地板上，猫咪在旁惬意玩耍，展现【{prod_name}】整洁无异味的品质养宠生活"
+            highlight = f"置于现代温馨居家阳光落地窗边木地板上，爱宠在旁惬意玩耍，展现【{prod_name}】温馨陪伴的高品质养宠生活"
         elif vertical == "beauty":
             highlight = f"置于现代高定浴室大理石洗手台上，晨光透过百叶窗洒下斑驳光影与水光涟漪，展现【{prod_name}】清晨护肤仪式"
         elif vertical == "digital":
@@ -219,41 +267,62 @@ def get_perspective_strategy_data(
             highlight = f"清晨自然光穿透纱帘斜射，融入真实生活环境台面，自然展现【{prod_name}】高品质陪伴使用瞬间"
     elif pid == "03_detail":
         if vertical == "beauty":
-            highlight = f"85mm微距特写瓶口与滴管处，高纯度精华水滴凝结欲滴，侧逆光折射微光，超浅景深背景完全散景"
+            highlight = f"85mm微距特写【{prod_name}】核心质地与精工封口细节，水润晶莹自然凝结，侧逆光折射微光，超浅景深背景完全散景"
         elif vertical == "pet":
-            highlight = f"微距特写门洞踏板与边缘接缝 5 厘米处，硬光侧打凸显环保亲肤磨砂颗粒与双层密封抑菌硅胶圈"
+            highlight = f"微距特写【{prod_name}】关键工艺接缝与材质纹理，硬光侧打凸显环保亲肤用料与圆润防磕碰大倒角，做工精良"
         elif vertical == "home_large":
-            highlight = f"85mm微距特写扶手转角精密双针车缝线，强侧光清晰勾勒天然纹理肌理与饱满回弹弧度，背景奶油般虚化"
+            highlight = f"85mm微距特写【{prod_name}】关键工艺接缝与表层纹理肌理，强侧光清晰勾勒精工做工与耐磨质感，背景奶油般虚化"
         elif vertical == "food":
             highlight = f"100mm极限微距特写食材细腻纹理与微渗晶莹汁水，高显色光打出鲜亮色泽，超浅景深聚焦核心美味切面"
+        elif vertical == "apparel":
+            highlight = f"85mm微距特写【{prod_name}】面料细腻纹理与精密车缝边缘，侧逆光呈现织物经纬质感，背景虚化"
         else:
             highlight = f"镜头贴近局部 5-10 厘米极限微距，侧逆光细腻勾勒【{prod_name}】材质纹理与微米级精工倒角，超浅景深虚化"
     elif pid == "04_structure":
-        if vertical == "beauty":
-            highlight = f"分子级 3D 悬浮解构透视，核心活性成分与水网粒子层层悬浮展开，冷蓝光晕展现【{prod_name}】深层渗透科技"
-        elif vertical == "pet":
-            highlight = f"全机身模块化组件轴向悬浮爆炸视图(Exploded View)，分离顶盖、滤砂踏板与除臭滤芯组件有序排布"
-        elif vertical == "home_large":
-            highlight = f"半剖面悬浮透视解构，外层材质、高回弹内衬与承重龙骨底架自上而下轴向悬浮排开，展现【{prod_name}】硬核内部用料"
-        elif vertical == "digital":
-            highlight = f"精密内部元器件轴向悬浮爆炸视图，主控芯片、声学腔体与阻尼转轴层层排开，冷色科技蓝轮廓光"
+        if is_complex:
+            if vertical == "digital":
+                highlight = f"精密内部元器件轴向悬浮爆炸视图，主控芯片、精工模组与内部核心构造层层排开，冷色科技蓝轮廓光"
+            elif vertical == "home_large":
+                highlight = f"工业精密结构分层解析，核心电机马达、动力模组或承重龙骨架构爆炸透视，科技工程感线条"
+            else:
+                highlight = f"精密装配模组与内部核心构造轴向悬浮爆炸透视图(Exploded View)，多层精密结构层层清晰呈现，冷色科技轮廓光"
         else:
-            highlight = f"核心构造与内部元器件轴向悬浮微距爆炸透视，多层阻隔结构与核心科技层层清晰呈现"
+            if vertical == "beauty":
+                highlight = f"分子级 3D 悬浮解构透视，核心活性成分与水网粒子层层悬浮展开，冷蓝光晕展现【{prod_name}】深层渗透科技"
+            elif vertical == "pet":
+                highlight = f"核心材质用料与耐用抗拉扯/抗磨损分层工序工艺解析图，微距透视呈现【{prod_name}】的抗咬耐磨材质分层与稳固连接节点，杜绝脱落吞食风险"
+            elif vertical == "apparel":
+                highlight = f"核心面料与工序分层解析图，透视呈现【{prod_name}】的表层防护面料、透气微孔与内衬支撑结构"
+            elif vertical == "home_large":
+                highlight = f"多层内部用料悬浮透视解构，外层环保皮质/布艺、高回弹支撑层与加固骨架构件自上而下悬浮排开，展现【{prod_name}】扎实内部用料"
+            else:
+                highlight = f"核心材质用料与耐用抗拉扯/抗磨损分层工序工艺解析图，透视呈现【{prod_name}】的扎实用料与精湛工序细节"
+
+            tweaks = [
+                {"id": "material_layers", "label": "🔬 材质分层工序透视", "tweakText": f"微距透视分层呈现【{prod_name}】的核心材质选料与耐用抗拉扯工艺"},
+                {"id": "craft_joints", "label": "🔗 强化稳固连接节点", "tweakText": "特写定焦核心衔接与受力节点，展现高强度抗磨损与安全无脱落结构"},
+                {"id": "durability_proof", "label": "🛡️ 强化耐用抗咬防损", "tweakText": "突出耐磨抗撕咬材质纹理与安全亲肤环保工艺，消除耐用性顾虑"},
+                {"id": "industrial_callouts", "label": "📐 加极简工艺技术标线", "tweakText": "画面搭配极简工序解析标线与材质说明标注，增强专业信任感"},
+            ]
     elif pid == "05_pain_killer":
         crush_target = pain_points if pain_points else "核心买家痛点与耐用顾虑"
         if vertical == "pet":
-            highlight = f"直击猫砂外溅与闷臭痛点：高速快门抓拍猫咪出仓与落砂踏板高效回落滤净瞬间，密闭锁臭实测打消顾虑"
+            highlight = f"针对养宠核心痛点（{crush_target}），高速快门抓拍真实使用互动瞬间，以无可辩驳的坚固耐用与安全表现打消顾虑"
         elif vertical == "beauty":
-            highlight = f"针对油腻搓泥顾虑：手背涂抹后 50 张吸油纸瞬间吹落无粘连，水润秒吸收对比形成无可辩驳的视觉证言"
+            highlight = f"针对买家护肤美妆抗拒点（{crush_target}），手背涂抹秒吸收清爽不粘腻对比，形成无可辩驳的视觉证言"
         elif vertical == "apparel":
-            highlight = f"针对渗水掉色顾虑：高压水枪强力喷淋表面水珠荷叶般滚落，强效暴风雨防风抗水实测瞬间"
+            highlight = f"针对服饰买家核心顾虑（{crush_target}），动态实测瞬间抓拍，直观展现【{prod_name}】挺阔不变形、耐磨抗拉扯的扎实品质"
+        elif vertical == "digital":
+            highlight = f"针对数码硬核抗拒点（{crush_target}），极限工况实测瞬间抓拍，定格卓越稳定性与可靠做工"
         else:
             highlight = f"直击买家最大抗拒痛点（{crush_target}），高速快门多机位动感抓拍硬核实测瞬间，打消下单顾虑"
     elif pid == "06_size":
-        if vertical in ["home_large", "pet"]:
-            highlight = f"放置于现代客厅地面木地板上，与室内沙发、绿植或宠物并列同框，直观展现【{prod_name}】真实占地空间与宏阔体量"
+        if vertical == "home_large":
+            highlight = f"放置于现代生活空间地面，与室内经典家具或成人站姿并列同框，直观展现【{prod_name}】真实占地空间与宏阔体量"
+        elif vertical == "pet":
+            highlight = f"与爱宠或成年人手部自然交互同框，直观呈现【{prod_name}】真实人体工学比例与空间体量感知"
         elif vertical in ["food", "beauty"]:
-            highlight = f"成年女性手部自然托起轻握，或与手机口红并列平齐摆放，清晰认知【{prod_name}】真实容量与精致手感"
+            highlight = f"成年人手部自然托起轻握，或与手机口红并列平齐摆放，清晰认知【{prod_name}】真实体量与精致手感"
         else:
             highlight = f"成年人手部自然人体工学握持，或与日常经典随身物品同框并列，直观展现【{prod_name}】真实尺寸比例"
     elif pid == "07_emotional":
@@ -312,6 +381,7 @@ class PromptMatrixCompiler:
         target_users = product_info.get("target_audience") or product_info.get("target_users", "追求品质生活的消费者")
 
         vertical = detect_product_vertical(prod_name, category, material)
+        is_complex = is_complex_mechanical_product(prod_name, category, material)
 
         compiled_results = []
         for p_def in PERSPECTIVE_DEFINITIONS:
@@ -322,52 +392,83 @@ class PromptMatrixCompiler:
             base_composition = p_def["desc"]
             if vertical == "pet":
                 if pid == "02_scene":
-                    base_composition = "融入真实温馨家居环境（现代极简客厅阳光处/落地窗阳台/猫爬架旁），柔和自然晨光斜射，猫咪在旁温馨陪伴，展现整洁无异味的品质养宠生活"
+                    base_composition = f"融入真实温馨家居环境（现代客厅阳光处/阳台木地板），柔和自然晨光斜射，爱宠在旁互动玩耍，展现人宠相伴的高品质养宠生活"
                 elif pid == "03_detail":
-                    base_composition = "85mm微距特写，浅景深虚化背景，侧逆光细腻勾勒抗菌哑光亲肤环保材质、圆润防磕碰大倒角与密闭防漏接缝"
+                    base_composition = f"85mm微距特写，浅景深虚化背景，侧逆光细腻勾勒【{prod_name}】环保亲肤材质肌理、精细圆润倒角与稳固连接工艺"
                 elif pid == "04_structure":
-                    base_composition = "模块化分离结构悬浮爆炸视图(Exploded View)，分离式顶盖、抽屉式砂底盒、落砂过滤踏板与抑菌除臭滤芯组件轴向清晰排布，冷色科技轮廓光"
+                    if is_complex:
+                        base_composition = "模块化组件轴向悬浮爆炸视图(Exploded View)，机身核心功能模组清晰排布，冷色科技轮廓光"
+                    else:
+                        base_composition = f"核心材质用料与耐用抗拉扯/抗磨损分层工序工艺解析图，微距透视呈现【{prod_name}】的抗咬耐磨用料、加固衔接结构与安全环保细节"
                 elif pid == "05_pain_killer":
-                    base_composition = f"针对养宠核心痛点（{pain_points or '防猫砂飞溅外带、全封闭强效锁臭隔绝异味、大空间进出顺畅'}），具象化视觉定格，呈现彻底隔臭不漏砂的硬核证言"
+                    base_composition = f"针对养宠核心痛点（{pain_points or '容易咬坏、安全隐患或脱落误吞'}），具象化视觉实测定格，呈现经久耐用与安全无忧的硬核证言"
                 elif pid == "06_size":
-                    base_composition = "放置于室内家居地面，与成年猫咪或家居沙发并列同框，直观展现猫咪进出自由的宽敞内部体量与真实家居占地比例"
+                    base_composition = f"与爱宠或成人自然交互同框，直观呈现【{prod_name}】的真实人体工学比例与空间体量感知"
                 elif pid == "07_emotional":
-                    base_composition = "电影感宽画幅光影（丁达尔暖光漫射、温馨落日余晖），猫咪惬意陪伴在侧，弱化塑料感，传递人宠和谐共处的治愈高级格调"
+                    base_composition = f"电影感宽画幅光影（丁达尔暖光漫射、温馨落日余晖），爱宠惬意相伴在侧，传递人宠深情共处的治愈高级格调"
                 elif pid == "09_buyer_show":
-                    base_composition = "小红书买家秀风格，真实居家客厅一角随手抓拍，柔和生活漫射光，猫咪好奇靠近或踩踏踏板，充满生活萌态与真实种草感"
+                    base_composition = f"小红书买家秀风格，真实居家一角随手抓拍，柔和生活漫射光，爱宠好奇互动使用【{prod_name}】，充满生活萌态与真实种草感"
             elif vertical == "beauty":
                 if pid == "02_scene":
                     base_composition = "融入高定美学场域（现代极简晨光浴室大理石洗手台/梳妆台），柔和侧逆自然光，水润光泽倒影与水珠点缀"
+                elif pid == "03_detail":
+                    base_composition = f"85mm微距特写，浅景深虚化背景，精准定焦于【{prod_name}】精工封装与核心质地，侧逆光呈现高端光泽感"
                 elif pid == "04_structure":
-                    base_composition = "高阶分子水网或核心活性成分微距解析图，半透明折射光感与科技悬浮水光粒子，展现深层渗透科技"
+                    base_composition = f"高阶成分或微观配方解构图，半透明折射光感与分子水光粒子，展现深层滋养与科技渗透工艺"
                 elif pid == "05_pain_killer":
-                    base_composition = f"针对护肤核心抗拒点（{pain_points or '油腻厚重不吸收、搓泥卡粉、敏感泛红'}），手背清爽化水质地抓拍或哑光秒吸收对比，展现清爽透润"
+                    base_composition = f"针对护肤美妆核心顾虑（{pain_points or '油腻厚重、搓泥不吸收、敏感刺激'}），清爽秒吸收或温和贴肤实测对比，展现水润舒适的安心证据"
                 elif pid == "06_size":
-                    base_composition = "成年女性手部自然轻握，或与日常经典护肤美妆物件并列同框，直观呈现一手掌控的精致体量"
+                    base_composition = f"手部自然托起轻握，或与日常经典随身物件并列平齐摆放，直观呈现【{prod_name}】一手掌控的精致体量"
                 elif pid == "09_buyer_show":
-                    base_composition = "小红书风格第一人称手持特写，自然窗边漫射光，质地晶莹剔透，亲切真实的社交开箱种草氛围"
+                    base_composition = f"小红书风格第一人称手持特写，自然窗边漫射光，质地细腻真实，亲切真实的社交开箱种草氛围"
             elif vertical == "digital":
                 if pid == "02_scene":
                     base_composition = "融入现代极简极客工作台（电竞书房/现代商务办公桌面），柔和侧逆光，搭配现代数码配件与科技氛围"
+                elif pid == "03_detail":
+                    base_composition = f"85mm微距特写，侧逆光细腻勾勒【{prod_name}】精密接缝、微米级精细喷砂或拉丝金属质感"
                 elif pid == "04_structure":
-                    base_composition = "精密内部元器件悬浮爆炸透视图(Exploded View)，主控芯片、精密声学腔体或阻尼轴体轴向有序排布，冷色科技蓝轮廓光"
+                    if is_complex:
+                        base_composition = "精密内部元器件悬浮爆炸透视图(Exploded View)，主控芯片、精工模组与内部核心构造轴向有序排布，冷色科技蓝轮廓光"
+                    else:
+                        base_composition = f"核心用料与工学分层工艺解析图，微距透视呈现【{prod_name}】的内部用料与稳固架构"
                 elif pid == "05_pain_killer":
                     base_composition = f"针对数码硬核抗拒点（{pain_points or '发热降频、续航衰减、磕碰磨损'}），极客测试场景定格，视觉呈现卓越可靠性"
                 elif pid == "06_size":
-                    base_composition = "手部自然人体工学握持，或与超极本/手机并列平齐摆放，建立精准纤薄度与便携尺码感知"
+                    base_composition = f"手部自然人体工学握持，或与超极本/手机并列平齐摆放，建立精准纤薄度与便携尺码感知"
                 elif pid == "09_buyer_show":
-                    base_composition = "极客桌面真实搭配开箱随手抓拍，桌面自然氛围光，真实数码博主种草推荐视角"
+                    base_composition = f"极客桌面真实搭配开箱随手抓拍，桌面自然氛围光，真实数码博主种草推荐视角"
             elif vertical == "home_large":
                 if pid == "02_scene":
                     base_composition = "融入宽敞明亮的现代品质家居环境（开放式现代客厅/生活阳台），柔和自然光，展现井然有序的整洁家居生活"
+                elif pid == "03_detail":
+                    base_composition = f"85mm微距特写，强侧光清晰勾勒【{prod_name}】关键工艺接缝与天然用料肌理，背景奶油般虚化"
                 elif pid == "04_structure":
-                    base_composition = "工业精密结构分层解析，核心电机马达、动力模组或承重龙骨架构爆炸透视，科技工程感线条"
+                    if is_complex:
+                        base_composition = "工业精密结构分层解析，核心动力模组、电机驱动或承重龙骨架构爆炸透视，科技工程感线条"
+                    else:
+                        base_composition = f"多层内部用料悬浮透视解构，外层材质、内部支撑工学与加固骨架层层排开，展现【{prod_name}】扎实用料"
                 elif pid == "05_pain_killer":
                     base_composition = f"针对家居生活核心痛点（{pain_points or '占地拥挤、运行噪音、清洁打理繁琐'}），严苛环境实测视觉证言，消除买家后顾之忧"
                 elif pid == "06_size":
-                    base_composition = "置于室内生活地面或柜体旁，与成人站姿或沙发餐桌并列同框，直观呈现真实占地空间与人体工学黄金高度"
+                    base_composition = f"置于室内生活空间，与成人站姿或经典家具并列同框，直观呈现【{prod_name}】真实占地空间与人体工学黄金高度"
                 elif pid == "09_buyer_show":
-                    base_composition = "真实住家生活空间开箱实景，自然生活光，整洁高级的无摆拍生活记录"
+                    base_composition = f"真实住家生活空间开箱实景，自然生活光，整洁高级的无摆拍生活记录"
+            elif vertical == "apparel":
+                if pid == "02_scene":
+                    base_composition = f"融入都市街头或自然山野微风环境，自然漫射光，模特动态穿搭展示【{prod_name}】挺阔版型与随性身姿"
+                elif pid == "03_detail":
+                    base_composition = f"85mm微距特写，精准聚焦【{prod_name}】的面料织物经纬肌理、精工车缝线与高质感五金细节"
+                elif pid == "04_structure":
+                    base_composition = f"核心面料与工序分层解析图，透视呈现【{prod_name}】的表层防护面料、透气微孔与内衬支撑结构"
+                elif pid == "05_pain_killer":
+                    base_composition = f"针对服饰买家核心顾虑（{pain_points or '起球变形、掉色易皱或不耐穿'}），动态拉扯或耐磨实测瞬间抓拍，直观展现【{prod_name}】挺阔耐穿的扎实品质"
+                elif pid == "06_size":
+                    base_composition = f"模特身着【{prod_name}】站姿或日常动作展示，搭配比例参照，清晰传达版型尺码与上身体感"
+                elif pid == "09_buyer_show":
+                    base_composition = f"小红书街拍/穿搭OOTD随手拍，自然日光，穿搭生活感拉满，真实种草上身效果"
+            else:
+                if pid == "04_structure" and not is_complex:
+                    base_composition = f"核心材质用料与耐用抗拉扯/抗磨损分层工序工艺解析图，透视呈现【{prod_name}】的扎实用料与精湛工序细节"
 
             # 2. 获取该视角下的流派强化参数
             style_enhancement = style.perspective_enhancements.get(pid, "")
@@ -387,7 +488,8 @@ class PromptMatrixCompiler:
 
             # 视角专属业务强化
             if pid == "05_pain_killer":
-                prompt += f"【痛点攻坚场景】：具象化消除买家核心顾虑（{pain_points}），视觉呈现严密可靠。"
+                effective_pain = pain_points or "耐用抗损与核心品质顾虑"
+                prompt += f"【痛点攻坚场景】：具象化消除买家核心顾虑（{effective_pain}），视觉呈现严密可靠。"
             elif pid in ("09_buyer_show", "02_scene"):
                 prompt += f"【目标客群代入】：生动融入符合（{target_users}）生活品位的高阶氛围中。"
 
