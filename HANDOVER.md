@@ -1,9 +1,14 @@
-# 🛒 电商视觉工坊 (Ecommerce Studio) · 全栈功能交接与系统设计文档
+# 🛒 电商视觉工坊 (CommerceDarkroom / Ecommerce Studio) · 全栈功能交接与系统设计文档
 
-> **文档版本**: v2.1.0 (Refactored)  
-> **更新时间**: 2026-11-21  
-> **适用受众**: 产品经理、前端/后端工程师、运维工程师、测试专家及项目交接人  
-> **代码仓库分支**: `refactor/nextjs-fastapi-studio`
+> **文档版本**: v2.2.0 (Production Live)  
+> **更新时间**: 2026-11-22  
+> **适用受众**: 产品经理、前端/后端工程师、运维工程师、测试专家及项目接手人  
+> **官方开源仓库**: [https://github.com/CoderWDD/CommerceDarkroom](https://github.com/CoderWDD/CommerceDarkroom)  
+> **核心跟踪分支**: `main` (生产发布分支) / `refactor/nextjs-fastapi-studio` (主开发特性分支)  
+> **线上正式公网系统**: 
+> - 🌐 **前端 (Web UI)**: [https://ecommercestudioweb.vercel.app](https://ecommercestudioweb.vercel.app)
+> - ⚙️ **后端 (FastAPI API)**: [https://commercedarkroom.onrender.com](https://commercedarkroom.onrender.com)
+> - 📑 **在线 Swagger 契约**: [https://commercedarkroom.onrender.com/docs](https://commercedarkroom.onrender.com/docs)
 
 ---
 
@@ -20,7 +25,10 @@
 6. [数据存储与会话模型 (Schema 2.0)](#6-数据存储与会话模型-schema-20)
 7. [运维与自动化启停体系](#7-运维与自动化启停体系)
 8. [质量保障与自动化测试体系](#8-质量保障与自动化测试体系)
-9. [免服务器 (Serverless) 免费部署指南](#9-免服务器-serverless-免费部署指南)
+9. [生产环境部署架构与已上线交付资产 (Vercel + Render)](#9-生产环境部署架构与已上线交付资产-vercel--render)
+   - 9.1 线上公网交付清单与配置全景
+   - 9.2 环境变量契约配置表
+   - 9.3 核心关键踩坑与技术攻坚复盘（接手必读）
 10. [常见问题定位与运维排障手册](#10-常见问题定位与运维排障手册)
 
 ---
@@ -380,37 +388,92 @@ python3 -m unittest ecommerce_studio/test_core_backend.py \
 
 ---
 
-## 9. 免服务器 (Serverless) 免费部署指南
+## 9. 生产环境部署架构与已上线交付资产 (Vercel + Render)
 
-若您没有专属云服务器，推荐采用以下经过实测的**零成本免服务器部署方案**：
+本项目已实现**全栈 100% 免费、免信用卡、零门槛**的公网云端托管交付，并打通了 GitHub 自动化持续部署（CI/CD）闭环。
 
 ```mermaid
-flowchart LR
-    Client["终端买家/用户浏览器"] --> Vercel["前端: Vercel (全球 CDN 加速)"]
-    Vercel -->|反向代理 API| HF["后端: Hugging Face Spaces / Render (免费容器)"]
-    HF -->|持久化大图| R2["存储: Cloudflare R2 / Supabase Storage (10GB 免费)"]
+flowchart TD
+    subgraph Client["公网终端用户"]
+        Browser["浏览器 (PC / 移动端)\nhttps://ecommercestudioweb.vercel.app"]
+    end
+
+    subgraph Vercel["前端托管平台 (Vercel Edge Network)"]
+        VFrontend["Next.js 14 Web 工作台\n(ecommerce_studio_web)"]
+        VEnv["环境变量:\nNEXT_PUBLIC_API_URL\nFASTAPI_BACKEND_URL"]
+    end
+
+    subgraph Render["后端容器云平台 (Render Web Service)"]
+        RBackend["FastAPI 异步高性能引擎\nhttps://commercedarkroom.onrender.com"]
+        RDocs["Swagger 在线交互契约\n/docs"]
+        RStatic["静态资源服务\n/output/{session_id}/*.jpg"]
+    end
+
+    subgraph GitHub["代码托管 (GitHub CI/CD)"]
+        Repo["CoderWDD/CommerceDarkroom (main 分支)"]
+    end
+
+    Repo -->|自动触发构建| VFrontend
+    Repo -->|自动触发部署| RBackend
+
+    Browser -->|1. 访问 Web 页面| VFrontend
+    Browser -->|2. 长连接 SSE 9图批量流式推流 (直连)| RBackend
+    Browser -->|3. 加载商用高清大图 (/output/...)| RStatic
+    VFrontend -.->|服务端备用反代| RBackend
 ```
 
-### 推荐组合方案：Vercel (前端) + Hugging Face Spaces (后端)
+### 9.1 线上公网交付清单与配置全景
 
-#### 1. 前端托管 (Vercel) - 完全免费
-1. 将代码推送到 GitHub；
-2. 登录 [Vercel](https://vercel.com)，点击 **New Project** 并关联您的仓库；
-3. **Root Directory** 选择 `ecommerce_studio_web`；
-4. **Environment Variables** 配置：
-   - `FASTAPI_BACKEND_URL`: 填入您的后端公网地址（如 `https://your-app.hf.space`）。
-5. 点击 **Deploy**，约 1 分钟即可获得全球 CDN 加速的 `https://your-studio.vercel.app` 免费域名。
+| 模块 | 托管平台 | 线上正式访问地址 | 绑定的代码根目录 | 核心构建与启动配置 |
+| :--- | :--- | :--- | :--- | :--- |
+| **前端 Web UI** | **Vercel** | 🔗 **[https://ecommercestudioweb.vercel.app](https://ecommercestudioweb.vercel.app)**<br>*(备用: `https://ecommercestudio-5y538pfk7-coderwdds-projects.vercel.app`)* | `ecommerce_studio_web` | **Framework**: Next.js<br>**Build**: `npm run build`<br>**Output**: `.next` |
+| **后端 API** | **Render** | 🔗 **[https://commercedarkroom.onrender.com](https://commercedarkroom.onrender.com)** | 仓库根目录 `.` | **Build**: `pip install -r ecommerce_studio/requirements.txt`<br>**Start**: `python3 -m uvicorn ecommerce_studio.main:app --host 0.0.0.0 --port $PORT` |
+| **接口文档** | **Render** | 🔗 **[https://commercedarkroom.onrender.com/docs](https://commercedarkroom.onrender.com/docs)** | - | 交互式在线测试、Pydantic 模式自描述文档 |
 
-#### 2. 后端容器托管 (Hugging Face Spaces 或 Render) - 完全免费
-- **平台优势**: Hugging Face Spaces 免费提供 2 vCPU + 16GB 内存容器，支持 Docker 原生部署，无冷启动休眠超时限制。
-- **操作步骤**:
-  1. 在 Hugging Face 创建一个 **New Space**，SDK 选择 **Docker**；
-  2. 使用工程根目录自带的 `Dockerfile`；
-  3. 在 Space Settings 的 **Variables and secrets** 中配置你的 API Key（如 `OPENAI_API_KEY`、`GEMINI_API_KEY` 等）；
-  4. 部署完成后即可得到免费独立的 HTTPS API 端点。
+---
 
-#### 3. 静态图片外部托管 (Cloudflare R2) - 10GB 免费
-- 在免服务器环境下容器磁盘可能是临时只读的，可在 `tools/image_tool.py` 中将生成的图片直接通过 S3 SDK 上传至 Cloudflare R2（每月提供 10GB 免费存储与零流出流量费），并返回 CDN URL。
+### 9.2 环境变量契约配置表
+
+#### 前端环境变量 (已配置于 Vercel Dashboard / CLI)
+| 变量名 | 当前线上取值 | 说明 |
+| :--- | :--- | :--- |
+| `NEXT_PUBLIC_API_URL` | `https://commercedarkroom.onrender.com` | **客户端直连后端公网地址**。浏览器直接向 Render 发起 SSE 长连接推流，**彻底规避 Vercel 免费版 60s 函数超时**。 |
+| `FASTAPI_BACKEND_URL` | `https://commercedarkroom.onrender.com` | **服务端反代后备地址**。用于 Next.js 服务端路由向后端转发非长连接请求。 |
+
+---
+
+### 9.3 核心关键踩坑与技术攻坚复盘（接手必读）
+
+接手人在维护公网部署时，请务必关注以下 4 个关键技术决策与踩坑记录：
+
+#### 1. 为什么不用 Hugging Face Spaces？
+* **平台政策变动**：Hugging Face 已于近期全面收紧计算型空间政策，免费用户**无法直接创建 Docker / Gradio Compute Space**（界面标有 `Paid`，需订阅 Pro 会员），仅纯前端 `Static` 免费。
+* **决策结果**：果断选用 **Vercel（前端全球 CDN）+ Render（后端 Python 原生容器）**，实现真正意义上的 **￥0 成本、免信用卡、长久稳定**。
+
+#### 2. Render 启动报错 `Could not import module "ecommerce_studio.main"` 的修复
+* **问题现象**：Render 启动命令执行 `uvicorn ecommerce_studio.main:app` 时抛错退出代码 3。
+* **原因剖析**：FastAPI 原入口定义在 `ecommerce_studio/api/main.py`，Render 默认启动命令寻找顶层的 `ecommerce_studio/main.py` 失败。
+* **优雅解决**：
+  - 在工程中新增标准兼容入口 [ecommerce_studio/main.py](file:///home/coderwdd/workspace/explore/crewAI/ecommerce_studio/main.py)，安全重定向导出 `app` 并注入 `sys.path`；
+  - 并在根目录提供标准化基础设施蓝图 [render.yaml](file:///home/coderwdd/workspace/explore/crewAI/render.yaml)，Render 导入即自动化一键配置。
+
+#### 3. Vercel Hobby 免费版 60 秒超时与 SSE 9 图长连接保障
+* **问题现象**：批量生图生成全套 9 大图（即使限制并发度为 1 保证稳定性）通常需要 2~3.5 分钟。Vercel 免费版对 Serverless Function 有硬性限制：
+  - `maxDuration` 超过 60 秒时，在 `Deploying outputs...` 阶段会被 Vercel 部署系统直接拒绝抛出 `status: Error`；
+  - 若让 Vercel 服务端函数代理长连接，会在 60 秒被边缘节点直接断链中断。
+* **优雅解决**：
+  - 前端改造：封装动态统一网关解析器 `getApiBaseUrl()` 与 `formatAssetUrl()`；
+  - 生产环境下，浏览器端的 `useBatchRenderer`（SSE 订阅）、`api-client`、`useConfigStore` 均**通过客户端跨域直连 Render 公网地址**（后端已开放 `allow_origins=["*"]`）；
+  - 同时将 Next.js 服务端路由的 `maxDuration` 严格规范为 `60`，确保 Vercel 构建部署秒级顺畅过审。
+
+#### 4. 自动化 CI/CD 机制
+* 当本地修改代码并推送到 GitHub 仓库的 `main` 分支时：
+  ```bash
+  git push origin HEAD:main
+  ```
+  - **Vercel**：监听 GitHub Webhook，自动拉取 `ecommerce_studio_web` 进行增量生产构建，约 50 秒内全球生效；
+  - **Render**：开启 `Auto-Deploy`，自动拉取后端代码并热重载 Uvicorn 进程。
+
 
 ---
 
@@ -434,9 +497,25 @@ flowchart LR
 ### Q3: 端口 8000 或 3000 被占用无法启动？
 - **解决**: 执行 `./start.sh --force`。脚本会自动识别并优雅终止占用进程树，完成端口释放后自动就绪。
 
+### Q4: 公网访问前端时，为什么首次打开或接口响应需要等约 30~50 秒？
+- **原因剖析**: Render 免费版实例具备 **闲置休眠机制 (Spin-down after 15m idle)**。若过去 15 分钟内没有任何 HTTP 流量，容器会自动沉睡；当新请求到来时会自动唤醒容器冷启动，通常耗时 30~50 秒。
+- **持久保活解决方案**: 
+  - 接手人若希望 24 小时全天候秒开，推荐使用免费的 [UptimeRobot](https://uptimerobot.com) 或 GitHub Actions 定时任务，设置每隔 10 分钟向后端心跳端点 `https://commercedarkroom.onrender.com/` 发送一次轻量 GET 请求，即可保持实例常驻活跃不休眠。
+
+### Q5: 生产环境图片资源显示异常或报 CORS 跨域错误？
+- **排查步骤**:
+  1. 检查 Vercel 生产环境变量 `NEXT_PUBLIC_API_URL` 是否准确配置为 `https://commercedarkroom.onrender.com`（注意末尾不要加多余斜杠）；
+  2. 检查 Render 后端 [ecommerce_studio/api/main.py](file:///home/coderwdd/workspace/explore/crewAI/ecommerce_studio/api/main.py) 的 CORS 配置，确认包含 `allow_origins=["*"]`；
+  3. 直接在浏览器地址栏打开任意图片链接（形如 `https://commercedarkroom.onrender.com/output/xxx.jpg`），排查是否由于 Render 容器重建导致临时会话图片未持久化（正式生产推荐接入 Cloudflare R2）。
+
 ---
 
-## 11. 交接人与工程维护建议
+## 11. 接手人工程维护与演进建议
 - **代码规范**: 遵循 PEP8 与 TypeScript 严格类型检查；杜绝在 `LLMMessage` 或复杂对象上直接调用 `str()` 引起 Python repr 泄露。
-- **分支管理**: 当前现代化重构所有落地代码均沉淀在 `refactor/nextjs-fastapi-studio` 分支，可随时合并至 `main`。
-- **技术支持与扩展**: 后续如需引入账号多租户体系，仅需在 FastAPI 中扩展 JWT 依赖注入中间件并在 `SessionManager` 中按 `user_id` 区分存储分区，现存前端组件与状态流完全无需重构。
+- **分支与发布规范**: 
+  - 线上生产发布分支统一为 **`main`**，任何合并或推送至 `main` 均会自动触发 Vercel 与 Render 的生产更新；
+  - 历史特性分支 `refactor/nextjs-fastapi-studio` 已与 `main` 完全对齐并保持跟踪。
+- **技术支持与扩展演进**:
+  1. **持久化对象存储**: 当前图片保存在 Render 容器本地卷中。后续迭代推荐在 [tools/image_tool.py](file:///home/coderwdd/workspace/explore/crewAI/ecommerce_studio/tools/image_tool.py) 中接入 **Cloudflare R2**（每月 10GB 免费且 0 出网流量费），出图直接上云返回永久 CDN 链接；
+  2. **多租户账号体系**: 如后续商业化接入用户鉴权，仅需在 FastAPI 中扩展 JWT 中间件并在 `SessionManager` 中按 `user_id` 划分持久化分区，前端 UI 与 SSE 流式总线无需变动。
+
